@@ -11,9 +11,8 @@
      frame-ancestors is deliberately NOT here: browsers ignore it in a meta tag
      and log an error. It lives in the two header files only. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Cpath%20d%3D%27M16%2029s-9-8.6-9-15a9%209%200%200%201%2018%200c0%206.4-9%2015-9%2015z%27%20fill%3D%27none%27%20stroke%3D%27%235eead4%27%20stroke-width%3D%272.4%27%20stroke-linejoin%3D%27round%27/%3E%3Ccircle%20cx%3D%2716%27%20cy%3D%2714%27%20r%3D%273.1%27%20fill%3D%27%235eead4%27/%3E%3C/svg%3E">
 <title>way-point - itinerary builder</title>
-<!-- Favicon: the top-bar pin, inlined as a data: URI (allowed by img-src data:, no extra request). -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23161b22'/><path d='M16 27s-7.5-7.2-7.5-12.6a7.5 7.5 0 0 1 15 0C23.5 19.8 16 27 16 27z' fill='none' stroke='%234fd1c5' stroke-width='2.4' stroke-linejoin='round'/><circle cx='16' cy='14.4' r='2.9' fill='%234fd1c5'/></svg>">
 
 <style>
 
@@ -1326,7 +1325,7 @@ details.stop-ed .body { padding: 10px; }
 "use strict";
 
 /* ---------- app identity ---------- */
-const APP = { id: "way-point", version: "1.4.3", schema: 1 };
+const APP = { id: "way-point", version: "1.4.4", schema: 1 };
 
 /* ---------- dom helpers ---------- */
 const $  = s => document.querySelector(s);
@@ -2000,24 +1999,23 @@ function itinBody(s) {
     return h.join("");
 }
 
-// The trip badge as the exported page's favicon: an SVG data URI (img-src data: is
-// allowed by the export CSP). Empty badge = no favicon line, browser default.
-function badgeFavicon(badge) {
-    badge = S(badge, 16).trim();
-    if (!badge) return "";
-    let n = [...badge].length;
-    try { n = [...new Intl.Segmenter().segment(badge)].length; } catch (e) {}
-    const fit = n > 1 ? " textLength='30' lengthAdjust='spacingAndGlyphs' font-size='18'" : " font-size='28'";
-    const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text x='16' y='17' text-anchor='middle'" +
-        " dominant-baseline='central' font-family='system-ui,sans-serif'" + fit + ">" + esc(badge) + "</text></svg>";
-    return '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,' + encodeURIComponent(svg) + '">\n';
+// Exported page favicon: the way-point pin drawn with plain SVG paths (no text or emoji,
+// which render unreliably in favicons), coloured with the export theme's accent.
+// Encoded the same way as the tool's own favicon. img-src data: is allowed by the export CSP.
+function exportFavicon(theme) {
+    const m = THEME_CSS.match(new RegExp('\\[data-theme="' + theme + '"\\][^}]*?--accent:(#[0-9a-fA-F]{6})'));
+    const c = m ? m[1] : "#5eead4";
+    const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>" +
+        "<path d='M16 29s-9-8.6-9-15a9 9 0 0 1 18 0c0 6.4-9 15-9 15z' fill='none' stroke='" + c + "' stroke-width='2.4' stroke-linejoin='round'/>" +
+        "<circle cx='16' cy='14' r='3.1' fill='" + c + "'/></svg>";
+    return '<link rel="icon" href="data:image/svg+xml,' + encodeURIComponent(svg).replace(/%2F/g, "/") + '">\n';
 }
 
 function exportHtml() {
     const doc = '<!DOCTYPE html>\n<html lang="en" data-theme="' + esc(state.meta.theme) + '">\n<head>\n<meta charset="utf-8">\n' +
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n<meta name="referrer" content="no-referrer">\n' +
         "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'\">\n" +
-        "<title>" + esc(state.meta.title || "Itinerary") + "</title>\n" + badgeFavicon(state.meta.badge) + "<style>*,*::before,*::after{box-sizing:border-box}html,body{margin:0}body{background:var(--bg)}" +
+        "<title>" + esc(state.meta.title || "Itinerary") + "</title>\n" + exportFavicon(state.meta.theme) + "<style>*,*::before,*::after{box-sizing:border-box}html,body{margin:0}body{background:var(--bg)}" +
         THEME_CSS + "</style>\n</head>\n<body>\n" + itinBody(state) + "\n</body>\n</html>\n";
     download(fname("html"), doc, "text/html;charset=utf-8");
     notify("HTML exported");
