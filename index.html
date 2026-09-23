@@ -1325,7 +1325,7 @@ details.stop-ed .body { padding: 10px; }
 "use strict";
 
 /* ---------- app identity ---------- */
-const APP = { id: "way-point", version: "1.4.5", schema: 1 };
+const APP = { id: "way-point", version: "1.5.0", schema: 1 };
 
 /* ---------- dom helpers ---------- */
 const $  = s => document.querySelector(s);
@@ -1713,7 +1713,7 @@ function dropzone(zone, input, cb) {
 }
 const escBr = s => esc(s).replace(/\r?\n/g, "<br>");
 
-const slug = s => (s || "itinerary").replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-|-$/g, "") || "itinerary";
+const slug = s => (s || "itinerary").replace(/[^\p{L}\p{N}]+/gu, "-").toLowerCase().replace(/^-|-$/g, "") || "itinerary";
 const fname = ext => slug(state.meta.title) + "." + ext;
 
 /* ---------- themes: one definition for editor, preview and export ---------- */
@@ -1848,12 +1848,18 @@ const blankStop  = () => ({ time: "", name: "", location: "", desc: "", tags: []
 // Rebuild from untrusted input: only known fields, all coerced to bounded strings.
 const S = (v, max) => (v == null ? "" : String(v)).slice(0, max || 4000);
 const arr = (v, max) => (Array.isArray(v) ? v : []).slice(0, max || 100).filter(x => x && typeof x === "object");
+// Cut to n characters (graphemes where supported) so an emoji is never split in half.
+const chars = (v, n) => {
+    v = S(v, 200);
+    try { return [...new Intl.Segmenter().segment(v)].slice(0, n).map(x => x.segment).join(""); }
+    catch (e) { return Array.from(v).slice(0, n).join(""); }
+};
 const tagList = v => (Array.isArray(v) ? v : S(v).split(",")).map(t => S(t, 40).trim()).filter(Boolean).slice(0, 12);
 
 function normalise(d) {
     const b = blankState(), m = (d && typeof d.meta === "object" && d.meta) || {};
     b.meta = {
-        title: S(m.title, 200), subtitle: S(m.subtitle, 200), dates: S(m.dates, 200), badge: S(m.badge, 16),
+        title: S(m.title, 200), subtitle: S(m.subtitle, 200), dates: S(m.dates, 200), badge: chars(m.badge, 8),
         nights: S(m.nights, 4), currency: S(m.currency, 8) || "EUR",
         theme: Object.hasOwn(THEMES, m.theme) ? m.theme : "evening",
         showStats: m.showStats !== false
@@ -1874,7 +1880,12 @@ function normalise(d) {
 let state = blankState();
 let openStops = new WeakSet();
 
-function persist() { store.set("state", JSON.stringify(state)); }
+let saveWarned = false;
+function persist() {
+    const ok = store.set("state", JSON.stringify(state));
+    if (!ok && !saveWarned) { saveWarned = true; notify("Autosave failed in this browser. Use Save JSON to keep your work", true); }
+    if (ok) saveWarned = false;
+}
 function restore() {
     try { const d = JSON.parse(store.get("state")); if (d && d.app === APP.id) { state = normalise(d); return true; } } catch (e) {}
     return false;
@@ -1886,6 +1897,11 @@ function saveJson() {
     out.version = APP.version;
     download(fname("json"), JSON.stringify(out, null, 2), "application/json");
     notify("Saved");
+}
+const MAX_FILE = 5 * 1024 * 1024;
+function loadFile(f) {
+    if (f.size > MAX_FILE) { notify("That file is over 5 MB, which is too big for an itinerary", true); return; }
+    read(f, loadJson);
 }
 function loadJson(text) {
     let d;
@@ -1918,7 +1934,15 @@ function stats() {
     const stops = state.days.reduce((a, d) => a + d.stops.length, 0);
     return { days, nights, stops };
 }
-const amount = v => { const n = parseFloat(String(v).replace(/[^0-9.\-]/g, "")); return Number.isFinite(n) ? n : 0; };
+// Accepts 1200, 1,200.50, 1.200,50 and 12,50. The last separator followed by
+// one or two digits is the decimal point; any other separator is grouping.
+const amount = v => {
+    let t = String(v).replace(/[^0-9.,\-]/g, "");
+    const m = t.match(/[.,](\d{1,2})$/);
+    t = m ? t.slice(0, m.index).replace(/[.,]/g, "") + "." + m[1] : t.replace(/[.,]/g, "");
+    const n = parseFloat(t);
+    return Number.isFinite(n) ? n : 0;
+};
 const money = n => {
     const c = state.meta.currency || "";
     try { return new Intl.NumberFormat("en-IE", { style: "currency", currency: c }).format(n); }
@@ -1977,15 +2001,16 @@ function itinBody(s) {
         h.push("</ol></section>");
     });
 
-    if (s.tips.length) {
+    if (s.tips.some(t => t.title || t.text)) {
         h.push('<section class="sec"><h2 class="sec-title">Tips</h2><div class="tips">');
-        s.tips.forEach(t => h.push('<div class="card"><h3>' + esc(t.title) + "</h3><p>" + escBr(t.text) + "</p></div>"));
+        s.tips.filter(t => t.title || t.text).forEach(t => h.push('<div class="card">' + (t.title ? "<h3>" + esc(t.title) + "</h3>" : "") +
+            (t.text ? "<p>" + escBr(t.text) + "</p>" : "") + "</div>"));
         h.push("</div></section>");
     }
-    if (s.checklist.length) {
+    if (s.checklist.some(c => c.text || c.note)) {
         h.push('<section class="sec"><h2 class="sec-title">Checklist</h2><ul class="check">');
         // Real checkboxes: tickable with no script. Ticks reset on reload; "done" in the tool sets the starting state.
-        s.checklist.forEach(c => h.push('<li><label><input type="checkbox"' + (c.done ? " checked" : "") + '><div><span class="ct">' +
+        s.checklist.filter(c => c.text || c.note).forEach(c => h.push('<li><label><input type="checkbox"' + (c.done ? " checked" : "") + '><div><span class="ct">' +
             esc(c.text) + "</span>" + (c.note ? '<div class="cn">' + esc(c.note) + "</div>" : "") + "</div></label></li>"));
         h.push("</ul></section>");
     }
@@ -1999,23 +2024,57 @@ function itinBody(s) {
     return h.join("");
 }
 
-// Exported page favicon: the way-point pin drawn with plain SVG paths (no text or emoji,
-// which render unreliably in favicons), coloured with the export theme's accent.
-// Encoded the same way as the tool's own favicon. img-src data: is allowed by the export CSP.
-function exportFavicon(theme) {
+// Exported page favicon.
+// With a badge: the badge, drawn two ways. A PNG rendered here on a canvas (works in
+// every browser, Safari included) and an SVG with the badge as text (crisper where
+// SVG favicons are supported). With no badge: the way-point pin in the theme accent.
+// Both are data: URIs, allowed by the export CSP (img-src data:), encoded like the
+// tool's own favicon so there are no raw <, >, quotes or spaces in the href.
+const dataSvg = svg => "data:image/svg+xml," + encodeURIComponent(svg).replace(/%2F/g, "/");
+function themeAccent(theme) {
     const m = THEME_CSS.match(new RegExp('\\[data-theme="' + theme + '"\\][^}]*?--accent:(#[0-9a-fA-F]{6})'));
-    const c = m ? m[1] : "#5eead4";
-    const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>" +
-        "<path d='M16 29s-9-8.6-9-15a9 9 0 0 1 18 0c0 6.4-9 15-9 15z' fill='none' stroke='" + c + "' stroke-width='2.4' stroke-linejoin='round'/>" +
-        "<circle cx='16' cy='14' r='3.1' fill='" + c + "'/></svg>";
-    return '<link rel="icon" href="data:image/svg+xml,' + encodeURIComponent(svg).replace(/%2F/g, "/") + '">\n';
+    return m ? m[1] : "#5eead4";
+}
+function badgePng(badge, colour) {
+    try {
+        const c = document.createElement("canvas");
+        c.width = c.height = 64;
+        const x = c.getContext("2d");
+        const font = px => px + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",system-ui,sans-serif';
+        let px = 56;
+        x.font = font(px);
+        const w = x.measureText(badge).width;
+        if (w > 62) { px = Math.max(16, Math.floor(px * 62 / w)); x.font = font(px); }
+        x.textAlign = "center";
+        x.textBaseline = "middle";
+        x.fillStyle = colour;   // colours plain-text badges; emoji keep their own colours
+        x.fillText(badge, 32, 35);
+        return c.toDataURL("image/png");
+    } catch (e) { return ""; }
+}
+function exportFavicon(meta) {
+    const badge = meta.badge.trim();
+    if (!badge) {
+        const c = themeAccent(meta.theme);
+        return '<link rel="icon" href="' + dataSvg("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>" +
+            "<path d='M16 29s-9-8.6-9-15a9 9 0 0 1 18 0c0 6.4-9 15-9 15z' fill='none' stroke='" + c + "' stroke-width='2.4' stroke-linejoin='round'/>" +
+            "<circle cx='16' cy='14' r='3.1' fill='" + c + "'/></svg>") + '">\n';
+    }
+    let n = [...badge].length;
+    try { n = [...new Intl.Segmenter().segment(badge)].length; } catch (e) {}
+    const fit = n > 1 ? " textLength='30' lengthAdjust='spacingAndGlyphs' font-size='18'" : " font-size='28'";
+    const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text x='16' y='17' text-anchor='middle'" +
+        " dominant-baseline='central' font-family='system-ui,sans-serif' fill='" + themeAccent(meta.theme) + "'" + fit + ">" + esc(badge) + "</text></svg>";
+    const png = badgePng(badge, themeAccent(meta.theme));
+    return (png ? '<link rel="icon" type="image/png" sizes="64x64" href="' + png + '">\n' : "") +
+        '<link rel="icon" type="image/svg+xml" href="' + dataSvg(svg) + '">\n';
 }
 
 function exportHtml() {
     const doc = '<!DOCTYPE html>\n<html lang="en" data-theme="' + esc(state.meta.theme) + '">\n<head>\n<meta charset="utf-8">\n' +
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n<meta name="referrer" content="no-referrer">\n' +
-        "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'\">\n" +
-        "<title>" + esc(state.meta.title || "Itinerary") + "</title>\n" + exportFavicon(state.meta.theme) + "<style>*,*::before,*::after{box-sizing:border-box}html,body{margin:0}body{background:var(--bg)}" +
+        "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'\">\n" + exportFavicon(state.meta) +
+        "<title>" + esc(state.meta.title || "Itinerary") + "</title>\n<style>*,*::before,*::after{box-sizing:border-box}html,body{margin:0}body{background:var(--bg)}" +
         THEME_CSS + "</style>\n</head>\n<body>\n" + itinBody(state) + "\n</body>\n</html>\n";
     download(fname("html"), doc, "text/html;charset=utf-8");
     notify("HTML exported");
@@ -2024,20 +2083,22 @@ function exportHtml() {
 /* ---------- markdown ---------- */
 const md = s => S(s).replace(/([\\`*_[\]#<>|])/g, "\\$1");
 const mdCell = s => md(s).replace(/\r?\n/g, " ");
+// Multi-line text: hard line breaks, and neutralise list / heading markers at line starts.
+const mdBlock = s => md(s).split(/\r?\n/).map(l => l.replace(/^(\s*)([-+]|\d+\.)(\s)/, "$1\\$2$3")).join("  \n");
 function exportMd() {
     const m = state.meta, st = stats(), o = [];
     o.push("# " + md(m.title || "Untitled trip"), "");
-    if (m.subtitle) o.push("_" + md(m.subtitle) + "_", "");
+    if (m.subtitle.trim()) o.push("_" + md(m.subtitle.trim()) + "_", "");
     if (m.dates) o.push(md(m.dates), "");
     const pl = (n, w) => n + " " + w + (n === 1 ? "" : "s");
     if (m.showStats && st.days) o.push("**" + pl(st.days, "day") + " - " + pl(st.nights, "night") + " - " + pl(st.stops, "stop") + "**", "");
     state.days.forEach((d, i) => {
         o.push("## Day " + (i + 1) + (d.title ? " - " + md(d.title) : ""), "");
-        if (d.date) o.push("_" + md(d.date) + "_", "");
+        if (d.date.trim()) o.push("_" + md(d.date.trim()) + "_", "");
         d.stops.forEach(p => {
             o.push("### " + (p.time ? md(p.time) + " - " : "") + md(p.name || "Untitled stop"), "");
             if (p.location) o.push("Location: " + md(p.location), "");
-            if (p.desc) o.push(md(p.desc), "");
+            if (p.desc) o.push(mdBlock(p.desc), "");
             if (p.alert) o.push("> **Warning:** " + md(p.alert).replace(/\r?\n/g, "\n> "), "");
             if (p.note) o.push("> " + md(p.note).replace(/\r?\n/g, "\n> "), "");
             const url = mapUrl(p.map), meta = [];
@@ -2048,7 +2109,7 @@ function exportMd() {
     });
     if (state.tips.length) {
         o.push("## Tips", "");
-        state.tips.forEach(t => o.push("- **" + md(t.title) + "** " + mdCell(t.text)));
+        state.tips.filter(t => t.title || t.text).forEach(t => o.push("- " + (t.title ? "**" + mdCell(t.title) + "** " : "") + mdCell(t.text)));
         o.push("");
     }
     if (state.checklist.length) {
@@ -2095,7 +2156,8 @@ function move(list, i, dir) {
     persist(); render();
 }
 function removeAt(list, i, what) {
-    if (!confirm("Remove this " + what + "?")) return;
+    const n = what === "day" ? list[i].stops.length : 0;
+    if (!confirm("Remove this " + what + (n ? " and its " + n + " stop" + (n === 1 ? "" : "s") : "") + "?")) return;
     list.splice(i, 1);
     persist(); render();
 }
@@ -2114,7 +2176,7 @@ function renderMeta() {
         field(m, "title", "Title", { ph: "Berlin", max: 200 }),
         field(m, "subtitle", "Eyebrow", { ph: "Family adventure - Summer", max: 200 }),
         field(m, "dates", "Dates line", { ph: "30 June - 2 July 2026", max: 200 }),
-        field(m, "badge", "Badge (emoji or short text)", { ph: "optional", max: 16 }),
+        field(m, "badge", "Badge (emoji or short text)", { ph: "optional", max: 64, set: v => { m.badge = chars(v, 8); } }),
         field(m, "nights", "Nights (blank = days - 1)", { max: 4 }),
         field(m, "currency", "Currency code", { ph: "EUR", max: 8, on: updateTotal })
     );
@@ -2233,7 +2295,7 @@ function printItin() { renderPreview(); window.print(); }
 window.addEventListener("beforeprint", renderPreview);
 $("#btnSave").addEventListener("click", saveJson);
 $("#btnLoad").addEventListener("click", () => $("#fileIn").click());
-$("#fileIn").addEventListener("change", e => { if (e.target.files[0]) read(e.target.files[0], loadJson); e.target.value = ""; });
+$("#fileIn").addEventListener("change", e => { if (e.target.files[0]) loadFile(e.target.files[0]); e.target.value = ""; });
 ["#btnHtml", "#btnHtml2"].forEach(b => $(b).addEventListener("click", exportHtml));
 ["#btnMd", "#btnMd2"].forEach(b => $(b).addEventListener("click", exportMd));
 ["#btnPrint", "#btnPrint2"].forEach(b => $(b).addEventListener("click", printItin));
@@ -2250,13 +2312,15 @@ document.addEventListener("keydown", e => {
     if (k === "o") { e.preventDefault(); $("#fileIn").click(); }
 });
 // Drop a JSON file anywhere on the page.
-document.addEventListener("dragover", e => { e.preventDefault(); document.body.classList.add("drop-over"); });
+const hasFiles = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
+document.addEventListener("dragover", e => { if (!hasFiles(e)) return; e.preventDefault(); document.body.classList.add("drop-over"); });
 document.addEventListener("dragleave", e => { if (!e.relatedTarget) document.body.classList.remove("drop-over"); });
 document.addEventListener("drop", e => {
+    if (!hasFiles(e)) return;
     e.preventDefault();
     document.body.classList.remove("drop-over");
     const f = e.dataTransfer.files[0];
-    if (f) read(f, loadJson);
+    if (f) loadFile(f);
 });
 
 /* ---------- example + schema ---------- */
