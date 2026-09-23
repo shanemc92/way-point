@@ -1,0 +1,9 @@
+# Netlify / Cloudflare Pages. Mirrors the meta CSP in index.html, plus
+# frame-ancestors, which browsers ignore in a meta tag and only honour here.
+# Widen both files together or the stricter of the two wins.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
+  Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'

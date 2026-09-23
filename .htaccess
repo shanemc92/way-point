@@ -1,0 +1,11 @@
+# Apache. Mirrors the meta CSP in index.html, plus frame-ancestors, which
+# browsers ignore in a meta tag and only honour here. Widen both files
+# together or the stricter of the two wins.
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "no-referrer"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), interest-cohort=()"
+  Header always set Content-Security-Policy "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+</IfModule>
+Options -Indexes

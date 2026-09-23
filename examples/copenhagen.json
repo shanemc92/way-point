@@ -1,0 +1,379 @@
+{
+  "app": "way-point",
+  "schema": 1,
+  "meta": {
+    "title": "Copenhagen",
+    "subtitle": "Long weekend",
+    "dates": "Friday - Sunday",
+    "badge": "🇩🇰",
+    "nights": "",
+    "currency": "EUR",
+    "theme": "city",
+    "showStats": true
+  },
+  "days": [
+    {
+      "title": "Arrival · Nyhavn · Canal tour · Tivoli",
+      "date": "Friday",
+      "stops": [
+        {
+          "time": "10:00",
+          "name": "Arrive at CPH",
+          "location": "Kastrup",
+          "desc": "Activate the Copenhagen Card in the app, then take the M2 metro from Terminal 3 to Kongens Nytorv, about 15 minutes.",
+          "tags": [
+            "Copenhagen Card covers metro"
+          ],
+          "map": "Copenhagen Airport Terminal 3",
+          "note": "",
+          "alert": "The card is digital only. Activate it in the app before you board."
+        },
+        {
+          "time": "11:00",
+          "name": "Drop bags at the hotel",
+          "location": "",
+          "desc": "",
+          "tags": [],
+          "map": "",
+          "note": "Short walk from Kongens Nytorv metro",
+          "alert": ""
+        },
+        {
+          "time": "12:00",
+          "name": "Broens Gadekøkken - lunch",
+          "location": "Christianshavn",
+          "desc": "Year-round street food square at the foot of the Inner Harbour Bridge. Around a dozen stalls; the Gasoline Grill burger is the usual pick.",
+          "tags": [
+            "Walk-in"
+          ],
+          "map": "Broens Gadekoekken Copenhagen",
+          "note": "5 min walk from Nyhavn",
+          "alert": ""
+        },
+        {
+          "time": "13:15",
+          "name": "Nyhavn",
+          "location": "",
+          "desc": "The postcard harbour of painted 17th-century townhouses and old wooden ships. Walk the quayside before the tour boats fill up.",
+          "tags": [
+            "Free"
+          ],
+          "map": "Nyhavn Copenhagen",
+          "note": "Cross the Inner Harbour Bridge",
+          "alert": ""
+        },
+        {
+          "time": "14:00",
+          "name": "Canal tour from Nyhavn",
+          "location": "",
+          "desc": "About an hour on the water: Christiansborg, the Opera House, Christianshavn and the Little Mermaid from the harbour side. Sit on the open deck if the weather allows.",
+          "tags": [
+            "Copenhagen Card"
+          ],
+          "map": "Canal tour Nyhavn Copenhagen",
+          "note": "Departs from the Nyhavn quay",
+          "alert": ""
+        },
+        {
+          "time": "15:30",
+          "name": "Amalienborg and the Marble Church",
+          "location": "",
+          "desc": "The royal residence's four identical palaces around an octagonal square, with the dome of Frederik's Church lined up behind. Free to walk through.",
+          "tags": [
+            "Free outside",
+            "Copenhagen Card for museum"
+          ],
+          "map": "Amalienborg Copenhagen",
+          "note": "10 min walk north from Nyhavn",
+          "alert": ""
+        },
+        {
+          "time": "16:30",
+          "name": "Back to hotel",
+          "location": "",
+          "desc": "Rest before the evening.",
+          "tags": [],
+          "map": "",
+          "note": "",
+          "alert": ""
+        },
+        {
+          "time": "18:30",
+          "name": "Tivoli Gardens",
+          "location": "Vesterbrogade 3",
+          "desc": "The 1843 pleasure garden in the middle of the city. Go for the evening, when thousands of lights come on. Entry is covered by the card; rides are paid separately. Eat inside the gardens.",
+          "tags": [
+            "Copenhagen Card entry",
+            "Rides extra"
+          ],
+          "map": "Tivoli Gardens Copenhagen",
+          "note": "M3 to Copenhagen Central Station, entrance opposite",
+          "alert": "Tivoli is seasonal and closes for part of the year. Check the dates before you travel."
+        }
+      ]
+    },
+    {
+      "title": "Rosenborg · Round Tower · Christiansborg · Christiania · Reffen",
+      "date": "Saturday",
+      "stops": [
+        {
+          "time": "09:00",
+          "name": "GRØD at Torvehallerne - breakfast",
+          "location": "Frederiksborggade 21",
+          "desc": "The original Copenhagen porridge bar inside the Torvehallerne glass market halls. Oat porridge with caramelised apple is the pick; browse the stalls after.",
+          "tags": [
+            "Walk-in"
+          ],
+          "map": "Torvehallerne Copenhagen",
+          "note": "Metro to Nørreport",
+          "alert": ""
+        },
+        {
+          "time": "10:00",
+          "name": "Rosenborg Castle and the King's Garden",
+          "location": "Øster Voldgade 4A",
+          "desc": "Renaissance castle built as Christian IV's summer house, with the Crown Jewels in the vaulted treasury. Allow 1 to 1.5 hours, then walk out through the King's Garden.",
+          "tags": [
+            "Copenhagen Card"
+          ],
+          "map": "Rosenborg Castle Copenhagen",
+          "note": "5 min walk from Torvehallerne",
+          "alert": "Busy on summer weekends. Arrive at opening."
+        },
+        {
+          "time": "11:45",
+          "name": "Round Tower",
+          "location": "Købmagergade 52A",
+          "desc": "A 17th-century observatory with a spiral ramp instead of stairs and a wide view over the old town rooftops. 30 to 45 minutes.",
+          "tags": [
+            "Copenhagen Card"
+          ],
+          "map": "Rundetaarn Copenhagen",
+          "note": "10 min walk south through the Latin Quarter",
+          "alert": ""
+        },
+        {
+          "time": "12:45",
+          "name": "Smørrebrød lunch",
+          "location": "",
+          "desc": "Open-faced rye sandwiches are the classic Danish lunch. Plenty of options around Strøget and the Latin Quarter.",
+          "tags": [
+            "Your call"
+          ],
+          "map": "",
+          "note": "Head toward Slotsholmen after",
+          "alert": ""
+        },
+        {
+          "time": "14:00",
+          "name": "Christiansborg Palace",
+          "location": "Prins Jørgens Gård 1",
+          "desc": "Seat of the Danish parliament. The Royal Reception Rooms and the tapestries are the highlight. The tower has one of the best free views in the city.",
+          "tags": [
+            "Copenhagen Card",
+            "Tower free"
+          ],
+          "map": "Christiansborg Palace Copenhagen",
+          "note": "Walk down Strøget to Slotsholmen",
+          "alert": ""
+        },
+        {
+          "time": "16:00",
+          "name": "Christianshavn and Christiania",
+          "location": "",
+          "desc": "Canal-side streets and houseboats, then Freetown Christiania, the self-governing commune on the old barracks site. Wander the lanes and the lakeside paths.",
+          "tags": [
+            "Free"
+          ],
+          "map": "Christiania Copenhagen",
+          "note": "Cross Knippelsbro to Christianshavn",
+          "alert": "No photos on Pusher Street, and keep your phone away there."
+        },
+        {
+          "time": "18:30",
+          "name": "Reffen - dinner",
+          "location": "Refshalevej 167A",
+          "desc": "Northern Europe's largest street food market, on the old shipyard at Refshaleøen. Dozens of stalls, bars and harbour-side seating. Stay for sunset over the water.",
+          "tags": [
+            "Walk-in",
+            "Copenhagen Card for harbour bus"
+          ],
+          "map": "Reffen Copenhagen",
+          "note": "Harbour bus from Nyhavn",
+          "alert": "Seasonal, roughly mid-March to the end of September."
+        },
+        {
+          "time": "21:30",
+          "name": "Back to hotel",
+          "location": "",
+          "desc": "",
+          "tags": [],
+          "map": "",
+          "note": "Harbour bus or bus 2A back to the centre",
+          "alert": ""
+        }
+      ]
+    },
+    {
+      "title": "Østerbro · Little Mermaid · Design · Kødbyen · Carlsberg · Airport",
+      "date": "Sunday",
+      "stops": [
+        {
+          "time": "09:00",
+          "name": "Juno the Bakery - breakfast",
+          "location": "Århusgade 48",
+          "desc": "Small Østerbro bakery known for its cardamom buns. Expect a queue on weekends, and they can sell out.",
+          "tags": [
+            "Walk-in",
+            "Go early"
+          ],
+          "map": "Juno the Bakery Copenhagen",
+          "note": "Metro to Trianglen, then walk",
+          "alert": ""
+        },
+        {
+          "time": "10:15",
+          "name": "Kastellet and the Little Mermaid",
+          "location": "",
+          "desc": "Walk the ramparts of the star-shaped 17th-century fortress, then down to the harbour for Edvard Eriksen's statue. Smaller than people expect.",
+          "tags": [
+            "Free"
+          ],
+          "map": "Kastellet Copenhagen",
+          "note": "20 min walk from Juno",
+          "alert": ""
+        },
+        {
+          "time": "11:30",
+          "name": "Design Museum Denmark",
+          "location": "Bredgade 68",
+          "desc": "Danish furniture and industrial design in a former hospital. The chair hall is the highlight. Allow about an hour.",
+          "tags": [
+            "Copenhagen Card"
+          ],
+          "map": "Designmuseum Danmark Copenhagen",
+          "note": "10 min walk from Kastellet",
+          "alert": ""
+        },
+        {
+          "time": "13:00",
+          "name": "Kødbyen - lunch",
+          "location": "Flæsketorvet",
+          "desc": "The Meatpacking District, now bars and restaurants in the old white-tiled halls. WarPigs does Texas-style brisket by weight.",
+          "tags": [
+            "Walk-in"
+          ],
+          "map": "Koedbyen Copenhagen",
+          "note": "M3 to Copenhagen Central Station, 10 min walk",
+          "alert": ""
+        },
+        {
+          "time": "14:30",
+          "name": "Home of Carlsberg",
+          "location": "Gamle Carlsberg Vej 11",
+          "desc": "The historic brewery site, with the Elephant Gate, the stables and a tasting at the end. Allow about 1.5 hours.",
+          "tags": [
+            "Copenhagen Card"
+          ],
+          "map": "Home of Carlsberg Copenhagen",
+          "note": "Bus from Kødbyen, about 15 minutes",
+          "alert": ""
+        },
+        {
+          "time": "16:30",
+          "name": "Collect bags",
+          "location": "",
+          "desc": "",
+          "tags": [],
+          "map": "",
+          "note": "Back to the hotel near Kongens Nytorv",
+          "alert": ""
+        },
+        {
+          "time": "17:15",
+          "name": "Head to CPH - flight departs 19:30",
+          "location": "Kastrup",
+          "desc": "Aim to be at the airport two hours before departure.",
+          "tags": [
+            "Copenhagen Card covers metro"
+          ],
+          "map": "Copenhagen Airport Terminal 3",
+          "note": "M2 from Kongens Nytorv to the airport, about 15 minutes",
+          "alert": "The 72h card started Friday 10:00, so it still covers this trip."
+        }
+      ]
+    }
+  ],
+  "tips": [
+    {
+      "title": "Copenhagen Card",
+      "text": "The DISCOVER card covers 80+ attractions and all public transport in the Capital Region, including the airport metro and harbour buses. It is digital and lives in the app. A 72h card started on arrival covers the whole weekend."
+    },
+    {
+      "title": "Bikes have right of way",
+      "text": "Cycle lanes are busy and fast. Look both ways before stepping off the kerb, and never stand in a bike lane."
+    },
+    {
+      "title": "Card, not cash",
+      "text": "Almost everywhere is card-only or card-preferred. Prices are in Danish kroner."
+    },
+    {
+      "title": "Weather",
+      "text": "It can be windy along the harbour even in summer. Bring a light layer for the canal tour and Reffen in the evening."
+    }
+  ],
+  "checklist": [
+    {
+      "text": "Copenhagen Card DISCOVER 72h",
+      "note": "Do now - buy online, activate in the app on arrival.",
+      "done": false
+    },
+    {
+      "text": "Check Tivoli and Reffen dates",
+      "note": "Do now - both are seasonal.",
+      "done": false
+    },
+    {
+      "text": "Book a table in Tivoli",
+      "note": "Book soon - Friday evening fills up.",
+      "done": false
+    },
+    {
+      "text": "Download the Copenhagen Card app",
+      "note": "Before you fly.",
+      "done": false
+    },
+    {
+      "text": "Plug adapter",
+      "note": "Denmark uses type C and K sockets.",
+      "done": false
+    }
+  ],
+  "costs": [
+    {
+      "item": "Flights",
+      "amount": "180",
+      "note": "Return, estimate"
+    },
+    {
+      "item": "Hotel",
+      "amount": "320",
+      "note": "2 nights, estimate"
+    },
+    {
+      "item": "Copenhagen Card 72h",
+      "amount": "150",
+      "note": "Per adult, estimate"
+    },
+    {
+      "item": "Food and drink",
+      "amount": "200",
+      "note": "Estimate"
+    },
+    {
+      "item": "Tivoli rides",
+      "amount": "40",
+      "note": "Estimate"
+    }
+  ]
+}

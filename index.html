@@ -1,0 +1,2664 @@
+<!DOCTYPE html>
+<html lang="en" data-design="chamfer" data-mode="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<!-- Keep this in sync with _headers and .htaccess. Both policies apply when the
+     page is served, and the browser enforces the intersection, so widening one
+     without the other silently keeps the stricter rule.
+     frame-ancestors is deliberately NOT here: browsers ignore it in a meta tag
+     and log an error. It lives in the two header files only. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>way-point - itinerary builder</title>
+<!-- Favicon: the top-bar pin, inlined as a data: URI (allowed by img-src data:, no extra request). -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23161b22'/><path d='M16 27s-7.5-7.2-7.5-12.6a7.5 7.5 0 0 1 15 0C23.5 19.8 16 27 16 27z' fill='none' stroke='%234fd1c5' stroke-width='2.4' stroke-linejoin='round'/><circle cx='16' cy='14.4' r='2.9' fill='%234fd1c5'/></svg>">
+
+<style>
+
+/* ============================================================
+   tool-name
+
+   One stylesheet, three independent axes:
+
+     data-design  chamfer | console | circuit | contour
+                  shape language, surface hue family, backdrop
+                  texture, ornament. This is the "look".
+
+     data-mode    dark | dusk | sepia | light
+                  the lightness ramp only. Every design supports
+                  every mode.
+
+     --ah / --ac  accent hue and chroma, set on <html> by the
+                  accent picker. Accent lightness comes from the
+                  mode, so a hue can never go invisible against
+                  the surface it sits on.
+
+   That is 16 palettes from eight small blocks, and no component
+   rule anywhere below knows which one is active.
+
+   Geometry is deliberately mode- and design-independent: every
+   design shares the same bar height, panel padding, control
+   padding, type sizes and grid. Designs may only change colour,
+   radius, clip-path, borders and absolutely-positioned ornament,
+   so switching design never reflows the page.
+
+   Sans for chrome and prose, mono for data. No webfonts, no
+   network calls, no build step.
+   ============================================================ */
+
+:root {
+    --wrap: 1080px;   /* content column */
+    --read: 760px;    /* prose column */
+    --ui:   system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+    /* Shared geometry. Do not re-declare these in a design block:
+       they are what keeps a design switch from moving content. */
+    --bar:      52px;   /* top bar height */
+    --pad:      18px;   /* panel padding */
+    --gap:      14px;   /* grid gap */
+    --ctl:      30px;   /* icon button / logo tile box */
+
+    /* Accent defaults, overwritten inline by the picker. */
+    --ah: 178;
+    --ac: 68%;
+}
+
+/* ============================================================
+   Designs: hue family per mode group, shape, ornament switches
+   ============================================================ */
+
+/* Cut corners, instrument grid. The house design. */
+html[data-design="chamfer"] {
+    --hd: 218; --sd: 20%;    /* dark + dusk surfaces */
+    --hw: 36;  --sw: 30%;    /* sepia surfaces */
+    --hl: 216; --sl: 14%;    /* light surfaces */
+    --radius: 0px;
+    --radius-sm: 4px;
+    --notch: 16px;
+    --notch-sm: 8px;
+}
+
+/* Square, graphite, hairline scan lines. The terminal remnant. */
+html[data-design="console"] {
+    --hd: 205; --sd: 9%;
+    --hw: 42;  --sw: 20%;
+    --hl: 210; --sl: 7%;
+    --radius: 0px;
+    --radius-sm: 0px;
+    --notch: 0px;
+    --notch-sm: 0px;
+}
+
+/* Board colours, via grid, one constant plating. */
+html[data-design="circuit"] {
+    --hd: 152; --sd: 38%;
+    --hw: 40;  --sw: 34%;
+    --hl: 150; --sl: 8%;
+    --radius: 3px;
+    --radius-sm: 2px;
+    --notch: 0px;
+    --notch-sm: 0px;
+}
+
+/* Soft radii, accent wash, no texture. The calm one. */
+html[data-design="contour"] {
+    --hd: 258; --sd: 22%;
+    --hw: 30;  --sw: 26%;
+    --hl: 250; --sl: 13%;
+    --radius: 14px;
+    --radius-sm: 9px;
+    --notch: 0px;
+    --notch-sm: 0px;
+}
+
+/* ============================================================
+   Modes: lightness ramp, accent band, status colours
+
+   --l-*  surface and text lightness stops
+   --al   accent lightness, chosen so any hue clears its surface
+   --ink  text that sits on top of the accent
+   ============================================================ */
+
+html[data-mode="dark"] {
+    color-scheme: dark;
+    --h: var(--hd); --s: var(--sd);
+    --l-bg: 7%;   --l-card: 10.5%; --l-sunken: 8.5%; --l-raised: 15%;
+    --l-line: 23%; --l-soft: 16%;
+    --l-fg: 93%;  --l-dim: 67%;   --l-faint: 54%;
+    --al: 66%; --soft: 0.15;
+    --ink: hsl(var(--ah) 60% 8%);
+    --sh: rgba(0, 0, 0, 0.55);
+    --shadow-lift: 0 20px 50px -20px rgba(0, 0, 0, 0.85);
+    --ok:   hsl(146 58% 55%);
+    --warn: hsl(41 86% 60%);
+    --bad:  hsl(5 85% 66%);
+    --ok-ink: hsl(146 60% 8%);
+    --copper: #d3a24a;
+}
+
+/* "Not as dark": same palette lifted off black, for rooms with
+   some light in them and for long sessions. */
+html[data-mode="dusk"] {
+    color-scheme: dark;
+    --h: var(--hd); --s: var(--sd);
+    --l-bg: 16%;  --l-card: 20%;  --l-sunken: 17.5%; --l-raised: 25%;
+    --l-line: 32%; --l-soft: 25%;
+    --l-fg: 95%;  --l-dim: 74%;   --l-faint: 62%;
+    --al: 68%; --soft: 0.17;
+    --ink: hsl(var(--ah) 60% 10%);
+    --sh: rgba(0, 0, 0, 0.42);
+    --shadow-lift: 0 20px 50px -20px rgba(0, 0, 0, 0.7);
+    --ok:   hsl(146 55% 58%);
+    --warn: hsl(41 82% 62%);
+    /* 72%, not 68%: btn-danger puts --bad on --raised, where 68% measured
+       3.96:1 and missed AA. This clears it at 4.51:1. */
+    --bad:  hsl(5 82% 72%);
+    --ok-ink: hsl(146 60% 9%);
+    --copper: #dcae5c;
+}
+
+/* Warm paper. Bright but low glare. */
+html[data-mode="sepia"] {
+    color-scheme: light;
+    --h: var(--hw); --s: var(--sw);
+    --l-bg: 87%;  --l-card: 95%;  --l-sunken: 91%; --l-raised: 98%;
+    --l-line: 72%; --l-soft: 82%;
+    --l-fg: 16%;  --l-dim: 36%;   --l-faint: 45%;
+    --al: 38%; --soft: 0.11;
+    --ink: hsl(var(--ah) 40% 98%);
+    --sh: rgba(70, 52, 18, 0.16);
+    --shadow-lift: 0 20px 50px -22px rgba(70, 52, 18, 0.3);
+    --ok:   hsl(150 52% 30%);
+    /* 33%, not 34%: btn-warn's hover puts --warn on --sunken, which measured
+       4.49:1 and missed AA by a hair. One point down clears it. */
+    --warn: hsl(32 78% 33%);
+    --bad:  hsl(2 68% 44%);
+    --ok-ink: hsl(40 40% 97%);
+    --copper: #96681a;
+}
+
+/* Cool white. The print-adjacent one. */
+html[data-mode="light"] {
+    color-scheme: light;
+    --h: var(--hl); --s: var(--sl);
+    --l-bg: 93%;  --l-card: 100%; --l-sunken: 96.5%; --l-raised: 99%;
+    --l-line: 84%; --l-soft: 90%;
+    --l-fg: 12%;  --l-dim: 37%;   --l-faint: 47%;
+    --al: 39%; --soft: 0.1;
+    --ink: hsl(var(--ah) 35% 99%);
+    --sh: rgba(16, 24, 40, 0.14);
+    --shadow-lift: 0 20px 50px -22px rgba(16, 24, 40, 0.26);
+    --ok:   hsl(150 54% 29%);
+    --warn: hsl(32 80% 33%);
+    --bad:  hsl(2 70% 45%);
+    --ok-ink: hsl(150 30% 99%);
+    --copper: #8a6410;
+}
+
+/* ============================================================
+   The token layer. Everything below this point uses these and
+   nothing else. A literal colour in a component rule is a bug:
+   it will break in at least one of the sixteen combinations.
+   ============================================================ */
+html {
+    --bg:        hsl(var(--h) var(--s) var(--l-bg));
+    --card:      hsl(var(--h) var(--s) var(--l-card));
+    --sunken:    hsl(var(--h) var(--s) var(--l-sunken));
+    --raised:    hsl(var(--h) var(--s) var(--l-raised));
+    --line:      hsl(var(--h) calc(var(--s) * 0.85) var(--l-line));
+    --line-soft: hsl(var(--h) calc(var(--s) * 0.85) var(--l-soft));
+    --fg:        hsl(var(--h) calc(var(--s) * 0.30) var(--l-fg));
+    --fg-dim:    hsl(var(--h) calc(var(--s) * 0.35) var(--l-dim));
+    --fg-faint:  hsl(var(--h) calc(var(--s) * 0.35) var(--l-faint));
+
+    --accent:      hsl(var(--ah) var(--ac) var(--al));
+    --accent-soft: hsl(var(--ah) var(--ac) var(--al) / var(--soft));
+    --accent-ink:  var(--ink);
+
+    --toggle-on:  var(--ok);
+    --toggle-ink: var(--ok-ink);
+
+    --shadow: 0 1px 2px var(--sh);
+}
+/* Contour lifts its surfaces instead of outlining them. */
+html[data-design="contour"] {
+    --shadow: 0 1px 2px var(--sh), 0 18px 38px -26px var(--sh);
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+* { box-sizing: border-box; }
+/* Mobile WebKit/Chrome paint a translucent grey-blue overlay on tap by
+   default, gone by the time :active/:hover settle. Against a plain button
+   that reads as a faint flash; against a filled button (btn-primary) or a
+   coloured label (btn-danger, btn-warn) it reads as the button changing
+   colour on click. Not present in desktop testing, which is why it is easy
+   to miss. */
+* { -webkit-tap-highlight-color: transparent; }
+/* Chromium/WebKit synthesise a brief :hover match from a tap on touch
+   devices, with no mouse-leave to clear it, so a border or colour tied to
+   :hover can flash or stick after a tap that was never a real hover. Every
+   :hover rule below is gated to devices that can actually hover, so a tap
+   only ever produces the base and :active styles. Keep new ones gated too. */
+html { scrollbar-gutter: stable; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--ui);
+    font-size: 13.5px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Backdrop. One layer, four treatments, all built from tokens and
+   all pinned behind the content, so none of them can push a pixel. */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+/* Instrument grid: a worksheet under the readout. */
+html[data-design="chamfer"] body::before {
+    background-image:
+        linear-gradient(var(--line-soft) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.4;
+}
+/* Scan rules: horizontal hairlines, close enough to read as a screen. */
+html[data-design="console"] body::before {
+    background-image: repeating-linear-gradient(180deg,
+        var(--line-soft) 0 1px, transparent 1px 6px);
+    opacity: 0.32;
+}
+/* Via holes: a plated ring around a hole the colour of the board. */
+html[data-design="circuit"] body::before {
+    background-image:
+        radial-gradient(circle, var(--line) 1.4px, transparent 1.6px),
+        radial-gradient(circle, var(--bg) 0.7px, transparent 0.9px);
+    background-size: 30px 30px, 30px 30px;
+    opacity: 0.55;
+}
+/* A single soft wash in the current accent, and nothing else. */
+html[data-design="contour"] body::before {
+    background-image: radial-gradient(880px 400px at 50% -190px,
+        var(--accent-soft), transparent 72%);
+    opacity: 1;
+}
+.topbar, .page, .footer, .notification { position: relative; z-index: 1; }
+
+h1, h2, h3 { margin: 0; font-weight: 600; }
+::selection { background: var(--accent); color: var(--accent-ink); }
+::placeholder { color: var(--fg-faint); opacity: 1; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* The chamfer. A clip-path, so it costs no space and the same box
+   is still the same box in every other design. */
+.chamfer, .chamfer-sm { border-radius: var(--radius); }
+html[data-design="chamfer"] .chamfer {
+    border-radius: 0;
+    clip-path: polygon(var(--notch) 0, 100% 0, 100% 100%, 0 100%, 0 var(--notch));
+}
+html[data-design="chamfer"] .chamfer-sm {
+    border-radius: 0;
+    clip-path: polygon(var(--notch-sm) 0, 100% 0, 100% 100%, 0 100%, 0 var(--notch-sm));
+}
+@media print {
+    .chamfer, .chamfer-sm { clip-path: none !important; border-radius: 3px; }
+}
+
+/* ============================================================
+   Top bar
+   ============================================================ */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+}
+/* Circuit only: the gold contact fingers of a card-edge connector,
+   kept to a hairline so it reads as an edge and not a stripe. */
+html[data-design="circuit"] .topbar::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -2px;
+    height: 2px;
+    background: repeating-linear-gradient(90deg,
+        var(--copper) 0, var(--copper) 5px,
+        transparent 5px, transparent 8px);
+    opacity: 0.7;
+}
+/* Console only: the bar sits on a second hairline, like a rule under
+   a header in a terminal UI. Drawn as a shadow, so it takes no space. */
+html[data-design="console"] .topbar {
+    box-shadow: 0 3px 0 -1px var(--line-soft);
+}
+.topbar-inner {
+    max-width: var(--wrap);
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: var(--bar);
+}
+
+/* Terminal remnant: the name stays mono. No version here, it lives
+   in the footer where it does not compete with the mark. */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font);
+    font-size: 14px;
+    white-space: nowrap;
+}
+.brand .name { color: var(--fg); font-weight: 500; letter-spacing: 0.2px; }
+
+/* A lit indicator rather than a decoration: it breathes to say the tab
+   is alive, and its title is where the "runs local" claim actually
+   lives. Keep the claim true or remove the dot. */
+.pulse {
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 5px var(--ok);
+    animation: breathe 2.6s ease-in-out infinite;
+}
+@keyframes breathe {
+    0%, 100% { opacity: 0.3; }
+    50%      { opacity: 1; }
+}
+
+/* Logo slot. One mark, every design: only the frame around it changes,
+   and the box is a fixed 30px square in all four so the bar never
+   shifts. Swap the SVG for the tool's own mark, drawn with
+   currentColor on a 32x32 viewBox so it follows the accent. */
+.logo {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ctl);
+    height: var(--ctl);
+    padding: 5px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    animation: logo-in 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+.logo svg, .logo img { display: block; width: 100%; height: 100%; }
+.logo img { object-fit: contain; }
+html[data-design="chamfer"] .logo {
+    border-radius: 0;
+    clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+}
+html[data-design="circuit"] .logo { border-color: var(--copper); }
+html[data-design="contour"] .logo { border-radius: 50%; }
+@keyframes logo-in {
+    from { opacity: 0; transform: scale(0.75); }
+    to   { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { .logo { animation: none; } }
+
+/* ---------- Tabs ---------- */
+.tabs { display: flex; gap: 2px; margin-left: auto; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+    position: relative;
+    font: inherit;
+    font-size: 13px;
+    color: var(--fg-dim);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    padding: 6px 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s, background 0.15s;
+}
+@media (hover: hover) { .tab:hover { color: var(--fg); background: var(--sunken); } }
+.tab[aria-selected="true"] { color: var(--accent); }
+/* Underline for the two hard-edged designs, drawn on a pseudo element
+   so the selected tab is exactly as tall as the others. */
+.tab::after {
+    content: "";
+    position: absolute;
+    left: 13px; right: 13px; bottom: -1px;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.18s ease;
+}
+.tab[aria-selected="true"]::after { transform: scaleX(1); }
+html[data-design="console"] .tab[aria-selected="true"],
+html[data-design="contour"] .tab[aria-selected="true"] { background: var(--accent-soft); }
+html[data-design="console"] .tab::after,
+html[data-design="contour"] .tab::after { display: none; }
+html[data-design="contour"] .tab { border-radius: 999px; }
+html[data-design="circuit"] .tab[aria-selected="true"]::after { background: var(--copper); }
+
+/* ---------- Menus: design, mode, accent ---------- */
+.bar-tools { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+.menu-wrap { position: relative; flex: 0 0 auto; }
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ctl);
+    height: var(--ctl);
+    padding: 0;
+    color: var(--fg-dim);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+@media (hover: hover) { .icon-btn:hover { color: var(--accent); background: var(--sunken); border-color: var(--line); } }
+.icon-btn[aria-expanded="true"] { color: var(--accent); background: var(--accent-soft); border-color: var(--line); }
+.icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+
+.menu {
+    position: absolute;
+    top: 36px;
+    right: 0;
+    z-index: 60;
+    min-width: 208px;
+    padding: 6px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lift);
+}
+.menu[hidden] { display: none; }
+.menu-title {
+    font-family: var(--font);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-faint);
+    padding: 4px 8px 6px;
+}
+.opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    color: var(--fg);
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    padding: 7px 9px;
+    cursor: pointer;
+}
+@media (hover: hover) { .opt:hover { background: var(--sunken); } }
+.opt[aria-checked="true"] { color: var(--accent); }
+.opt .lbl { display: flex; flex-direction: column; line-height: 1.3; }
+.opt .lbl small { color: var(--fg-faint); font-size: 11px; }
+.opt .tick { margin-left: auto; font-family: var(--font); font-size: 12px; opacity: 0; }
+.opt[aria-checked="true"] .tick { opacity: 1; }
+
+/* Design swatch: a 16px sample of that design's actual shape and
+   backdrop, so the menu shows what it is rather than naming it. */
+.dsw {
+    flex: 0 0 auto;
+    width: 16px; height: 16px;
+    background: var(--sunken);
+    border: 1px solid var(--fg-faint);
+}
+.opt[data-set="chamfer"] .dsw { clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%, 0 6px); }
+.opt[data-set="console"] .dsw {
+    background-image: repeating-linear-gradient(180deg, var(--fg-faint) 0 1px, transparent 1px 4px);
+}
+.opt[data-set="circuit"] .dsw {
+    border-radius: 2px;
+    background-image: radial-gradient(circle, var(--fg-faint) 1.2px, transparent 1.4px);
+    background-size: 8px 8px;
+    background-position: 1px 1px;
+}
+.opt[data-set="contour"] .dsw { border-radius: 50%; }
+
+/* Mode swatch: the ramp itself, ink over paper. */
+.msw {
+    flex: 0 0 auto;
+    width: 16px; height: 16px;
+    border: 1px solid var(--fg-faint);
+    border-radius: 2px;
+}
+.opt[data-set="dark"]  .msw { background: linear-gradient(135deg, hsl(215 20% 46%) 50%, hsl(215 20% 7%) 50%); }
+.opt[data-set="dusk"]  .msw { background: linear-gradient(135deg, hsl(215 18% 62%) 50%, hsl(215 18% 20%) 50%); }
+.opt[data-set="sepia"] .msw { background: linear-gradient(135deg, hsl(36 28% 28%) 50%, hsl(36 30% 92%) 50%); }
+.opt[data-set="light"] .msw { background: linear-gradient(135deg, hsl(215 14% 30%) 50%, hsl(215 14% 100%) 50%); }
+
+/* Accent picker. The swatches are painted by the script using the
+   live formula, so each one previews the hue as the current mode
+   will actually render it. */
+.swatches {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    padding: 4px 8px 8px;
+}
+.swatch {
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+@media (hover: hover) { .swatch:hover { transform: translateY(-1px); } }
+.swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--card), 0 0 0 3px var(--fg); }
+/* The wheel replaces the browser's colour input. Hue is the angle and
+   chroma is the radius, which is the whole of what the accent takes
+   from a pick: lightness is the mode's job. The rim is drawn by the
+   script at the lightness the active mode will actually render, and
+   the middle fades into the surface underneath, so the control is a
+   preview of the palette rather than a generic spectrum. */
+.wheel-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 8px 6px;
+    border-top: 1px solid var(--line-soft);
+}
+.wheel {
+    position: relative;
+    width: 116px;
+    height: 116px;
+    border-radius: 50%;
+    cursor: crosshair;
+    touch-action: none;
+    box-shadow: 0 0 0 1px var(--line);
+}
+.wheel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, var(--card) 5%, transparent 64%);
+    pointer-events: none;
+}
+.wheel-dot {
+    position: absolute;
+    width: 13px; height: 13px;
+    margin: -6.5px 0 0 -6.5px;
+    border-radius: 50%;
+    border: 2px solid var(--card);
+    box-shadow: 0 0 0 1px var(--fg);
+    pointer-events: none;
+}
+.accent-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    font-size: 12px;
+    color: var(--fg-dim);
+}
+.accent-foot .now { font-family: var(--font); color: var(--fg); }
+/* Kept alongside the wheel for the one case the wheel is bad at:
+   matching a brand colour exactly. */
+.hexin {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-family: var(--font);
+    color: var(--fg-faint);
+}
+.hexin .field { width: 66px; padding: 4px 6px; font-size: 11.5px; }
+
+/* ============================================================
+   Page
+   ============================================================ */
+.page { width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 22px 20px 34px; flex: 1 0 auto; }
+section[hidden] { display: none; }
+
+/* Terminal remnant: a mono status line under the bar. */
+.statusline {
+    font-family: var(--font);
+    font-size: 12px;
+    color: var(--fg-faint);
+    margin-bottom: 18px;
+}
+.statusline b { color: var(--fg-dim); font-weight: 500; }
+.statusline .chev { color: var(--accent); }
+
+.panel {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: var(--pad);
+    margin-bottom: 16px;
+}
+html[data-design="chamfer"] .panel {
+    border-radius: 0;
+    clip-path: polygon(var(--notch) 0, 100% 0, 100% 100%, 0 100%, 0 var(--notch));
+}
+/* Console: an accent rule down the binding edge. Absolute, so the
+   18px of padding is still 18px. */
+html[data-design="console"] .panel::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--accent);
+    opacity: 0.55;
+}
+/* Circuit: a fiducial in the corner, the way a board marks its own
+   orientation. Sits in the padding, never in the content. */
+html[data-design="circuit"] .panel::before {
+    content: "";
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 7px; height: 7px;
+    border: 1.5px solid var(--copper);
+    border-radius: 50%;
+    opacity: 0.65;
+}
+@media print { .panel { clip-path: none !important; } .panel::before { display: none; } }
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap);
+    margin-bottom: var(--gap);
+}
+.panel-head h2 { font-size: 14.5px; }
+.panel-head .sub {
+    font-family: var(--font);
+    font-size: 11px;
+    color: var(--fg-faint);
+}
+.panel-head .sub::before { content: "["; }
+.panel-head .sub::after  { content: "]"; }
+.prose { max-width: var(--read); color: var(--fg-dim); text-align: left; }
+/* About is body copy in a full-width panel, so it is not held to the
+   reading measure the narrow in-panel notes use. */
+#pane-about .prose { max-width: none; }
+
+/* ============================================================
+   Controls
+   ============================================================ */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 8px 14px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--fg);
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+@media (hover: hover) { .btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); } }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+@media (hover: hover) { .btn:disabled:hover { color: var(--fg); border-color: var(--line); background: var(--raised); } }
+
+.btn-primary {
+    color: var(--accent-ink);
+    background: var(--accent);
+    border-color: var(--accent);
+}
+@media (hover: hover) { .btn-primary:hover { color: var(--accent-ink); background: var(--accent); filter: brightness(1.08); } }
+html[data-design="chamfer"] .btn-primary {
+    border-radius: 0;
+    clip-path: polygon(var(--notch-sm) 0, 100% 0, 100% 100%, 0 100%, 0 var(--notch-sm));
+}
+html[data-design="contour"] .btn, html[data-design="contour"] .btn-primary { border-radius: 999px; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--fg-dim); }
+@media (hover: hover) { .btn-ghost:hover { background: var(--sunken); border-color: var(--line); } }
+
+/* Destructive and cautionary buttons. Border and fill come from the base .btn
+   rule unchanged, same as every other button - only the label colour marks
+   them, so a row of buttons keeps one silhouette and the red is the only thing
+   that stands out. --bad and --warn are measured against every surface a button
+   actually sits on - --raised at rest, --sunken on hover, --card behind both -
+   in all four modes, and clear 4.5:1 (WCAG AA) on all of them. Two tokens were
+   nudged to make that true; see the notes in the dusk and sepia ramps. Use
+   btn-danger for anything that destroys data and btn-warn for
+   anything that is merely irreversible or leaks. Never use the accent for
+   either: it means interaction, not state.
+
+   These two must stay BELOW .btn-ghost. They carry the same specificity, so
+   whichever is written last wins, and the common case is a combination -
+   "btn btn-sm btn-ghost btn-danger" for a row's remove button. With the order
+   the other way round the ghost's --fg-dim quietly overrides the red and the
+   button looks like every other one. */
+.btn-danger { color: var(--bad); }
+@media (hover: hover) { .btn-danger:hover { color: var(--bad); border-color: var(--bad); background: var(--sunken); } }
+.btn-warn { color: var(--warn); }
+@media (hover: hover) { .btn-warn:hover { color: var(--warn); border-color: var(--warn); background: var(--sunken); } }
+
+/* ---------- Inputs: mono, because they hold data ---------- */
+.field {
+    width: 100%;
+    font-family: var(--font);
+    font-size: 12.5px;
+    color: var(--fg);
+    background: var(--sunken);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+}
+@media (hover: hover) { .field:hover { border-color: var(--fg-faint); } }
+.field:focus { border-color: var(--accent); background: var(--card); }
+textarea.field { line-height: 1.6; resize: vertical; }
+select.field { cursor: pointer; }
+
+label.f {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--fg-dim);
+}
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--gap); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.spacer { flex: 1; }
+
+/* ---------- Toggles ---------- */
+.toggle-group { display: flex; flex-direction: column; gap: 12px; }
+.toggle-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 30px; }
+.toggle-label { font-size: 13px; color: var(--fg); }
+
+.toggle-switch {
+    position: relative;
+    flex: 0 0 auto;
+    width: 40px;
+    height: 22px;
+    border-radius: 11px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    cursor: pointer;
+    transition: background 0.18s, border-color 0.18s;
+}
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--fg-faint);
+    transition: transform 0.18s, background 0.18s;
+}
+.toggle-switch.active { background: var(--toggle-on); border-color: var(--toggle-on); }
+.toggle-switch.active::after { transform: translateX(18px); background: var(--toggle-ink); }
+
+/* ---------- Drop zone ---------- */
+.drop {
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 24px 14px;
+    text-align: center;
+    color: var(--fg-dim);
+    background: var(--sunken);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+html[data-design="chamfer"] .drop {
+    border-radius: 0;
+    clip-path: polygon(var(--notch) 0, 100% 0, 100% 100%, 0 100%, 0 var(--notch));
+}
+.drop.over { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+@media (hover: hover) { .drop:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); } }
+.drop b { display: block; margin-bottom: 2px; color: var(--fg); font-weight: 500; }
+@media (hover: hover) { .drop:hover b { color: var(--accent); } }
+@media print { .drop { clip-path: none !important; } }
+
+/* ---------- Data text ---------- */
+pre {
+    margin: 0;
+    padding: 12px;
+    max-height: 340px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--font);
+    font-size: 12.5px;
+    line-height: 1.6;
+    background: var(--sunken);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+}
+code { font-family: var(--font); font-size: 12px; }
+mark { background: var(--accent-soft); color: var(--accent); border-radius: 3px; padding: 1px 3px; }
+.log { font-family: var(--font); font-size: 12px; color: var(--fg-dim); }
+.log .ok { color: var(--ok); } .log .warn { color: var(--warn); }
+.log .bad { color: var(--bad); } .log .a { color: var(--accent); }
+.note { font-size: 12px; line-height: 1.6; color: var(--fg-dim); }
+.note code { color: var(--accent); }
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    color: var(--fg-dim);
+}
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.pill.warn { color: var(--warn); border-color: var(--warn); }
+.pill.bad { color: var(--bad); border-color: var(--bad); }
+
+/* ---------- Table ---------- */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+    text-align: left;
+    padding: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--fg-dim);
+    border-bottom: 1px solid var(--line);
+}
+/* Console: column heads read as a header row in a log, not a web table. */
+html[data-design="console"] th {
+    font-family: var(--font);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fg-faint);
+}
+td { padding: 6px 8px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+@media (hover: hover) { table tr:hover td { background: var(--sunken); } }
+td .field { padding: 5px 8px; }
+.empty {
+    padding: 28px;
+    text-align: center;
+    color: var(--fg-dim);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-sm);
+}
+
+/* ============================================================
+   Footer: where the version lives
+   ============================================================ */
+.footer {
+    width: 100%;
+    max-width: var(--wrap);
+    margin: 0 auto;
+    padding: 12px 20px 34px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-family: var(--font);
+    font-size: 11.5px;
+    color: var(--fg-faint);
+    border-top: 1px solid var(--line-soft);
+}
+.footer .sep { opacity: 0.5; }
+.footer .ver { color: var(--fg-dim); }
+.footer .right { margin-left: auto; }
+
+/* ============================================================
+   Notification
+   ============================================================ */
+.notification {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    font-family: var(--font);
+    font-size: 12.5px;
+    color: var(--fg);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--accent);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lift);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-6px);
+    transition: opacity 0.2s, transform 0.2s;
+}
+.notification::before { content: ">"; color: var(--accent); }
+.notification.show { opacity: 1; transform: translateX(0); }
+.notification.error { border-left-color: var(--bad); }
+.notification.error::before { content: "!"; color: var(--bad); }
+
+/* The toast follows the design like every other surface: it is the one
+   piece of chrome that appears over content, so a rounded pill floating
+   above a hard-edged page is exactly where the seam would show. It is
+   also the one element whose width is free to move, since it is fixed
+   to the corner and nothing reflows around it. */
+html[data-design="chamfer"] .notification {
+    border-radius: 0;
+    clip-path: polygon(var(--notch-sm) 0, 100% 0, 100% 100%, 0 100%, 0 var(--notch-sm));
+    /* the clip eats the left border, so the accent edge is redrawn inside it */
+    border-left-width: 1px;
+    box-shadow: inset 2px 0 0 var(--accent), var(--shadow-lift);
+}
+html[data-design="chamfer"] .notification.error {
+    box-shadow: inset 2px 0 0 var(--bad), var(--shadow-lift);
+}
+html[data-design="console"] .notification {
+    border-radius: 0;
+    border-left-width: 3px;
+}
+html[data-design="circuit"] .notification {
+    border-left-color: var(--copper);
+}
+html[data-design="circuit"] .notification::before { color: var(--copper); }
+html[data-design="circuit"] .notification.error { border-left-color: var(--bad); }
+/* Contour has no prompt chevron anywhere else, so it gets a lit dot
+   instead: same 1ch of space, no reflow against the other designs. */
+html[data-design="contour"] .notification {
+    border-radius: 999px;
+    padding: 9px 16px;
+    border-left-width: 1px;
+    border-left-color: var(--line);
+}
+html[data-design="contour"] .notification::before {
+    content: "";
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+html[data-design="contour"] .notification.error::before { background: var(--bad); }
+@media print { .notification { clip-path: none !important; } }
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 760px) {
+    .topbar-inner { flex-wrap: wrap; gap: 10px; padding: 8px 14px; }
+    .tabs { order: 3; width: 100%; margin-left: 0; }
+    .bar-tools { margin-left: auto; }
+    .page { padding: 16px 14px 28px; }
+    .footer { padding: 12px 14px 28px; }
+    .panel { padding: 14px; }
+    .grid { grid-template-columns: 1fr; }
+    .menu { min-width: 190px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+}
+
+/* ============================================================
+   Print: one light palette for every design and mode
+   ============================================================ */
+@media print {
+    html, html[data-mode="dark"], html[data-mode="dusk"],
+    html[data-mode="sepia"], html[data-mode="light"] {
+        color-scheme: light;
+        --bg: #ffffff; --card: #ffffff; --sunken: #fafafa; --raised: #ffffff;
+        --line: #999999; --line-soft: #cccccc;
+        --fg: #111111; --fg-dim: #555555; --fg-faint: #777777;
+        --accent: #333333; --accent-soft: transparent; --accent-ink: #ffffff;
+        --copper: #555555;
+        --shadow: none; --shadow-lift: none;
+    }
+    body::before { display: none !important; }
+    body { font-size: 11pt; }
+    .tabs, .bar-tools, .drop, .notification, .btn, .noprint { display: none !important; }
+    /* The bar survives as a masthead so the logo and name land on the page. */
+    .topbar { position: static; background: none; border-bottom: 1px solid #999; box-shadow: none; }
+    .topbar::after { display: none !important; }
+    .topbar-inner { max-width: none; padding: 0 0 8px; min-height: 0; }
+    .logo { color: #111; background: none; }
+    .page { max-width: none; padding: 0; }
+    .panel { border: none; padding: 0; margin-bottom: 18px; break-inside: avoid; page-break-inside: avoid; }
+    .footer { max-width: none; padding: 10px 0 0; }
+    section[hidden] { display: block !important; }
+    a[href]::after { content: " (" attr(href) ")"; font-size: 9pt; color: #555; }
+}
+
+/* ============================================================
+   way-point: editor pieces
+   ============================================================ */
+label.f .fl { font-size: 12px; color: var(--fg-dim); }
+label.f.wide { grid-column: 1 / -1; }
+label.f-inline { flex-direction: row; align-items: center; gap: 8px; }
+label.f-inline .field { width: auto; }
+textarea.field { resize: vertical; min-height: 2.6em; }
+.day-ed { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--sunken); padding: 12px; margin-bottom: 12px; }
+.day-ed > .head { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 10px; }
+.day-ed > .head .num { font-family: var(--font); color: var(--accent); font-size: 13px; padding-bottom: 8px; min-width: 48px; }
+.day-ed > .head label.f { flex: 1 1 200px; }
+.ctl { display: flex; gap: 4px; flex: none; }
+details.stop-ed { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--card); margin-bottom: 6px; }
+details.stop-ed > summary { cursor: pointer; padding: 6px 10px; display: flex; gap: 12px; align-items: center; list-style: none; }
+details.stop-ed > summary::-webkit-details-marker { display: none; }
+details.stop-ed > summary::before { content: "+"; font-family: var(--font); color: var(--accent); width: 10px; }
+details.stop-ed[open] > summary::before { content: "-"; }
+details.stop-ed[open] > summary { border-bottom: 1px solid var(--line-soft); }
+details.stop-ed .t { font-family: var(--font); color: var(--accent); min-width: 56px; font-size: 12.5px; }
+details.stop-ed .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+details.stop-ed .body { padding: 10px; }
+.item-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 8px; flex-wrap: wrap; }
+.item-row label.f { flex: 1 1 180px; }
+.item-row label.f.narrow { flex: 0 0 110px; }
+.item-row .toggle-item { min-height: 34px; }
+.drop-over { outline: 2px dashed var(--accent); outline-offset: -6px; }
+#preview { border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
+/* keep the house type and table rules out of the itinerary preview */
+.itin h1, .itin h2, .itin h3 { color: inherit; }
+.itin th, .itin td { font-family: inherit; }
+@media (hover: hover) { .itin table tr:hover td { background: none; } }
+
+/* Printing always prints the itinerary, never the editor form. */
+@media print {
+    .topbar, .statusline, .footer, #pane-work, #pane-about { display: none !important; }
+    #preview { border: 0; }
+    .itin a[href]::after { content: none !important; }
+}
+</style>
+<style id="themeCss"></style>
+</head>
+<body>
+
+<header class="topbar">
+    <div class="topbar-inner">
+        <div class="brand">
+            <span class="logo" aria-hidden="true">
+                <svg viewBox="0 0 32 32">
+                    <path d="M16 29s-9-8.6-9-15a9 9 0 0 1 18 0c0 6.4-9 15-9 15z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+                    <circle cx="16" cy="14" r="3.4" fill="currentColor"/>
+                </svg>
+            </span>
+            <span class="name">way-point</span>
+            <span class="pulse" title="Runs entirely in this tab. Nothing is uploaded."></span>
+        </div>
+
+        <nav class="tabs" role="tablist">
+            <button class="tab" id="tab-work" role="tab" aria-selected="true" aria-controls="pane-work">Build</button>
+            <button class="tab" id="tab-preview" role="tab" aria-selected="false" aria-controls="pane-preview">Preview</button>
+            <button class="tab" id="tab-about" role="tab" aria-selected="false" aria-controls="pane-about">About</button>
+        </nav>
+
+        <div class="bar-tools">
+
+            <!-- Design -->
+            <div class="menu-wrap">
+                <button class="icon-btn" id="designBtn" type="button" aria-haspopup="true" aria-expanded="false"
+                        aria-label="Design" title="Design">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 9V4h5"></path><path d="M20 15v5h-5"></path>
+                        <rect x="4" y="9" width="16" height="11"></rect>
+                    </svg>
+                </button>
+                <div class="menu" id="designMenu" role="menu" hidden>
+                    <div class="menu-title">Design</div>
+                    <button class="opt" role="menuitemradio" aria-checked="false" data-set="chamfer">
+                        <span class="dsw" aria-hidden="true"></span>
+                        <span class="lbl">Chamfer<small>cut corners, instrument grid</small></span>
+                        <span class="tick" aria-hidden="true">&check;</span>
+                    </button>
+                    <button class="opt" role="menuitemradio" aria-checked="false" data-set="console">
+                        <span class="dsw" aria-hidden="true"></span>
+                        <span class="lbl">Console<small>square, graphite, scan rules</small></span>
+                        <span class="tick" aria-hidden="true">&check;</span>
+                    </button>
+                    <button class="opt" role="menuitemradio" aria-checked="false" data-set="circuit">
+                        <span class="dsw" aria-hidden="true"></span>
+                        <span class="lbl">Circuit<small>board colours, via grid, copper</small></span>
+                        <span class="tick" aria-hidden="true">&check;</span>
+                    </button>
+                    <button class="opt" role="menuitemradio" aria-checked="false" data-set="contour">
+                        <span class="dsw" aria-hidden="true"></span>
+                        <span class="lbl">Contour<small>soft radii, accent wash</small></span>
+                        <span class="tick" aria-hidden="true">&check;</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mode -->
+            <div class="menu-wrap">
+                <button class="icon-btn" id="modeBtn" type="button" aria-haspopup="true" aria-expanded="false"
+                        aria-label="Mode" title="Mode">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"></path>
+                    </svg>
+                </button>
+                <div class="menu" id="modeMenu" role="menu" hidden>
+                    <div class="menu-title">Mode</div>
+                    <button class="opt" role="menuitemradio" aria-checked="false" data-set="dark">
+                        <span class="msw" aria-hidden="true"></span>
+                        <span class="lbl">Dark<small>default, lights off</small></span>
+                        <span class="tick" aria-hidden="true">&check;</span>
+                    </button>
+                    <button class="opt" role="menuitemradio" aria-checked="false" data-set="dusk">
+                        <span class="msw" aria-hidden="true"></span>
+                        <span class="lbl">Dusk<small>dark, lifted off black</small></span>
+                        <span class="tick" aria-hidden="true">&check;</span>
+                    </button>
+                    <button class="opt" role="menuitemradio" aria-checked="false" data-set="sepia">
+                        <span class="msw" aria-hidden="true"></span>
+                        <span class="lbl">Sepia<small>warm paper, low glare</small></span>
+                        <span class="tick" aria-hidden="true">&check;</span>
+                    </button>
+                    <button class="opt" role="menuitemradio" aria-checked="false" data-set="light">
+                        <span class="msw" aria-hidden="true"></span>
+                        <span class="lbl">Light<small>cool white</small></span>
+                        <span class="tick" aria-hidden="true">&check;</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Accent -->
+            <div class="menu-wrap">
+                <button class="icon-btn" id="accentBtn" type="button" aria-haspopup="true" aria-expanded="false"
+                        aria-label="Accent colour" title="Accent colour">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"></circle>
+                    </svg>
+                </button>
+                <div class="menu" id="accentMenu" role="menu" hidden>
+                    <div class="menu-title">Accent</div>
+                    <div class="swatches" id="swatches"></div>
+                    <div class="wheel-wrap">
+                        <div class="wheel" id="wheel" tabindex="0" role="slider"
+                             aria-label="Accent colour wheel. Left and right change hue, up and down change intensity."
+                             aria-valuemin="0" aria-valuemax="359" aria-valuenow="178" aria-valuetext="Teal">
+                            <span class="wheel-dot" id="wheelDot" aria-hidden="true"></span>
+                        </div>
+                        <div class="accent-foot">
+                            <span>Accent: <span class="now" id="accentNow">Teal</span></span>
+                            <label class="hexin" title="Match a brand colour exactly. The lightness is still set per mode.">#<input
+                                type="text" class="field" id="accentHex" maxlength="7" placeholder="2ec4b6"
+                                spellcheck="false" autocomplete="off" aria-label="Accent colour as hex"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</header>
+
+<main class="page">
+
+    <div class="statusline">~/way-point <span class="chev">&gt;</span> <b>holiday itinerary builder</b>, runs in your browser, nothing is uploaded</div>
+
+    <section id="pane-work" role="tabpanel" aria-labelledby="tab-work">
+
+        <div class="panel noprint">
+            <div class="row">
+                <button class="btn" id="btnLoad">Load JSON</button>
+                <button class="btn btn-primary" id="btnSave">Save JSON</button>
+                <button class="btn" id="btnHtml">Export HTML</button>
+                <button class="btn" id="btnMd">Export Markdown</button>
+                <button class="btn" id="btnPrint">Print</button>
+                <div class="spacer"></div>
+                <button class="btn btn-ghost btn-danger" id="btnReset">New trip</button>
+            </div>
+            <input type="file" id="fileIn" accept=".json,application/json" hidden>
+            <div class="note" style="margin-top:10px">Ctrl+S saves, Ctrl+O loads, or drop a saved .json anywhere on the page. Work is kept in this browser until you start a new trip.</div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2>Trip</h2><span class="sub">meta</span></div>
+            <div class="grid" id="metaFields"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2>Days</h2><span class="sub" id="dayCount">0 days</span></div>
+            <div id="days"></div>
+            <div class="row" style="margin-top:10px"><button class="btn btn-sm" id="btnAddDay">Add day</button></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2>Tips</h2><span class="sub">grid</span></div>
+            <div id="tips"></div>
+            <div class="row" style="margin-top:10px"><button class="btn btn-sm" id="btnAddTip">Add tip</button></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2>Checklist</h2><span class="sub">to book, to pack</span></div>
+            <div id="checklist"></div>
+            <div class="row" style="margin-top:10px"><button class="btn btn-sm" id="btnAddCheck">Add item</button></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2>Costs</h2><span class="sub" id="costTotal">total 0</span></div>
+            <div id="costs"></div>
+            <div class="row" style="margin-top:10px"><button class="btn btn-sm" id="btnAddCost">Add cost</button></div>
+        </div>
+
+    </section>
+
+    <section id="pane-preview" role="tabpanel" aria-labelledby="tab-preview" hidden>
+        <div class="panel noprint">
+            <div class="row">
+                <label class="f f-inline">Export theme
+                    <select class="field" id="expTheme" aria-label="Export theme"></select>
+                </label>
+                <div class="spacer"></div>
+                <button class="btn btn-primary" id="btnHtml2">Export HTML</button>
+                <button class="btn" id="btnMd2">Export Markdown</button>
+                <button class="btn" id="btnPrint2">Print</button>
+            </div>
+            <div class="note" style="margin-top:10px">The export theme only styles the itinerary you print or share. The tool itself follows the design, mode and accent menus.</div>
+        </div>
+        <div id="preview"></div>
+    </section>
+
+    <section id="pane-about" role="tabpanel" aria-labelledby="tab-about" hidden>
+        <div class="panel">
+            <div class="panel-head"><h2>About</h2></div>
+            <div class="prose">
+                Build a holiday itinerary by hand, save it as JSON, load it back to edit, and export a
+                self-contained HTML page or a Markdown file. Everything runs client side. There is no
+                network call and no analytics, and the exported page has no scripts at all.
+            </div>
+        </div>
+        <div class="panel">
+            <div class="panel-head"><h2>File format</h2><span class="sub">schema 1</span></div>
+            <div class="prose" style="margin-bottom:12px">
+                Deliberately simple, so a trip can be generated elsewhere and loaded here to tweak.
+                Unknown fields are dropped on load and every value is treated as plain text.
+            </div>
+            <pre id="schema"></pre>
+            <div class="row" style="margin-top:12px"><button class="btn btn-sm" id="btnExample">Load demo: Copenhagen weekend</button></div>
+        </div>
+        <div class="panel">
+            <div class="panel-head"><h2>Appearance</h2><span class="sub">design, mode, accent</span></div>
+            <div class="prose">
+                Three controls in the top bar, saved between visits. They style the tool only.
+                The itinerary has its own export theme on the Preview tab.
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<footer class="footer">
+    <span>way-point</span>
+    <span class="ver" id="footVer">v1.0.0</span>
+    <span class="sep">&middot;</span>
+    <span>MIT</span>
+    <span class="sep">&middot;</span>
+    <span>github.com/shanemc92</span>
+    <span class="right">no network calls, no analytics</span>
+</footer>
+
+<div class="notification" id="notification" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+
+/* ---------- app identity ---------- */
+const APP = { id: "way-point", version: "1.4.3", schema: 1 };
+
+/* ---------- dom helpers ---------- */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const el = (tag, cls, txt) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt != null) n.textContent = txt;
+    return n;
+};
+// Escapes for text and attribute context.
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const today = () => new Date().toISOString().slice(0, 10);
+
+/* ---------- storage (file:// and private mode safe) ---------- */
+const store = {
+    get(k)   { try { return localStorage.getItem(APP.id + ":" + k); } catch (e) { return null; } },
+    set(k,v) { try { localStorage.setItem(APP.id + ":" + k, v); return true; } catch (e) { return false; } },
+    del(k)   { try { localStorage.removeItem(APP.id + ":" + k); } catch (e) {} }
+};
+
+/* ---------- notification ---------- */
+let notifyT;
+function notify(msg, isError) {
+    const n = $("#notification");
+    n.textContent = msg;
+    n.classList.toggle("error", !!isError);
+    n.classList.add("show");
+    clearTimeout(notifyT);
+    notifyT = setTimeout(() => n.classList.remove("show"), 2200);
+}
+
+/* ============================================================
+   Appearance: design x mode x accent
+
+   Each axis is one data attribute or one pair of custom properties
+   on <html>, and each is stored separately, so a design change never
+   resets the mode and neither touches the accent.
+   ============================================================ */
+const root = document.documentElement;
+
+const DESIGNS = ["chamfer", "console", "circuit", "contour"];
+const MODES   = ["dark", "dusk", "sepia", "light"];
+
+/* Hue plus chroma. Kept clear of the green, amber and red that --ok,
+   --warn and --bad occupy, so the accent can never be read as state. */
+const ACCENTS = [
+    { id: "teal",   name: "Teal",   h: 178, c: 68 },
+    { id: "cyan",   name: "Cyan",   h: 196, c: 72 },
+    { id: "azure",  name: "Azure",  h: 214, c: 76 },
+    { id: "indigo", name: "Indigo", h: 248, c: 70 },
+    { id: "violet", name: "Violet", h: 276, c: 64 },
+    { id: "orchid", name: "Orchid", h: 302, c: 58 },
+    { id: "rose",   name: "Rose",   h: 340, c: 66 },
+    { id: "slate",  name: "Slate",  h: 210, c: 18 }
+];
+
+let accent = { h: 178, c: 68, name: "Teal" };
+
+/* ---------- keeping an arbitrary hue readable ----------
+   HSL lightness is not perceptual: hsl(178 68% 40%) and
+   hsl(248 68% 40%) are nowhere near the same brightness, so a fixed
+   per-mode lightness leaves a teal accent washed out on white while
+   an indigo one is fine. The mode still sets the lightness it wants,
+   but it is treated as a starting point: the accent is then walked
+   away from the surface until it clears a real contrast ratio,
+   measured against the surfaces it actually sits on. That is what
+   makes any colour from the picker safe, including a near-white or
+   near-black one, and why no accented label can go invisible. */
+const TARGET = 4.6;
+
+const srgb = u => (u <= 0.03928 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4));
+const lum = c => 0.2126 * srgb(c[0]) + 0.7152 * srgb(c[1]) + 0.0722 * srgb(c[2]);
+function ratio(a, b) {
+    const x = lum(a), y = lum(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+function hslRgb(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(Math.min(k(n) - 3, 9 - k(n)), 1));
+    return [f(0), f(8), f(4)];
+}
+/* Read the resolved colour off a real element rather than parsing the
+   token: the browser has already substituted every variable. */
+function surfaceOf(node) {
+    const m = /(\d+(?:\.\d+)?)[,\s]+(\d+(?:\.\d+)?)[,\s]+(\d+(?:\.\d+)?)/
+        .exec(getComputedStyle(node).backgroundColor || "");
+    return m ? [m[1] / 255, m[2] / 255, m[3] / 255] : null;
+}
+function surfaces() {
+    const out = [];
+    const p = $(".panel"), b = document.body;
+    [p, b].forEach(n => { const c = n && surfaceOf(n); if (c) out.push(c); });
+    return out.length ? out : [[0, 0, 0]];
+}
+const worst = (h, c, l, surf) => Math.min.apply(null, surf.map(s => ratio(hslRgb(h, c, l), s)));
+
+/* The mode's --al, used as the preference to start from. */
+function baseL() {
+    const v = parseFloat(getComputedStyle(root).getPropertyValue("--al"));
+    return isFinite(v) ? v : 66;
+}
+function tuneL(h, c, surf) {
+    const base = baseL();
+    if (worst(h, c, base, surf) >= TARGET) return base;
+    const dir = lum(surf[0]) > 0.35 ? -1 : 1;   /* away from the surface */
+    for (let l = base; l >= 6 && l <= 96; l += dir * 1.5) {
+        if (worst(h, c, l, surf) >= TARGET) return Math.round(l * 10) / 10;
+    }
+    return dir < 0 ? 14 : 94;
+}
+const accentCss = (h, c, l) => "hsl(" + h + " " + c + "% " + l + "%)";
+
+function applyAccent(a, save) {
+    accent = { h: a.h, c: a.c, name: a.name || ("H" + Math.round(a.h)) };
+    root.style.setProperty("--ah", String(accent.h));
+    root.style.setProperty("--ac", accent.c + "%");
+    $("#accentNow").textContent = accent.name;
+    tuneAccent();
+    if (save && !store.set("accent", JSON.stringify(accent))) sessionOnly();
+}
+
+/* Sets the accent lightness, and the ink that goes on top of it, from
+   measurement rather than assumption. Called on accent change and on
+   every mode change, since the surface underneath has just moved. */
+function tuneAccent() {
+    const surf = surfaces();
+    /* --al is cleared first so baseL() reads the mode's value, not the
+       one tuned for the previous mode. */
+    root.style.removeProperty("--al");
+    const l = tuneL(accent.h, accent.c, surf);
+    root.style.setProperty("--al", l + "%");
+
+    const acc = hslRgb(accent.h, accent.c, l);
+    const pale = hslRgb(accent.h, 30, 98), deep = hslRgb(accent.h, 55, 9);
+    root.style.setProperty("--ink",
+        ratio(pale, acc) >= ratio(deep, acc) ? accentCss(accent.h, 30, 98) : accentCss(accent.h, 55, 9));
+
+    paintSwatches(surf);
+    paintWheel(surf);
+}
+
+/* The rim is 24 stops of the same tuned colour the page would use, so
+   the wheel shifts with the mode instead of lying about it. Hue 0 sits
+   at three o'clock and runs clockwise, which is what the pointer maths
+   below assumes. */
+const WHEEL_C = 80;
+function paintWheel(surf) {
+    const s0 = surf || surfaces();
+    const w = $("#wheel");
+    const tuned = root.style.getPropertyValue("--al");
+    root.style.removeProperty("--al");
+    const stops = [];
+    for (let h = 0; h <= 360; h += 15) {
+        stops.push(accentCss(h % 360, WHEEL_C, tuneL(h % 360, WHEEL_C, s0)) + " " + h + "deg");
+    }
+    if (tuned) root.style.setProperty("--al", tuned);
+    w.style.background = "conic-gradient(from 90deg, " + stops.join(", ") + ")";
+
+    const r = (w.clientWidth || 116) / 2;   /* menu is display:none on the first paint */
+    const rad = accent.h * Math.PI / 180;
+    const d = Math.min(1, Math.max(0, (accent.c - C_MIN) / (C_MAX - C_MIN))) * (r - 7);
+    const dot = $("#wheelDot");
+    dot.style.left = (r + Math.cos(rad) * d) + "px";
+    dot.style.top  = (r + Math.sin(rad) * d) + "px";
+    dot.style.background = "var(--accent)";
+    w.setAttribute("aria-valuenow", String(Math.round(accent.h)));
+    w.setAttribute("aria-valuetext", accent.name);
+}
+
+function paintSwatches(surf) {
+    const s0 = surf || surfaces();
+    const tuned = root.style.getPropertyValue("--al");
+    root.style.removeProperty("--al");
+    $$(".swatch").forEach(sw => {
+        const h = Number(sw.dataset.h), c = Number(sw.dataset.c);
+        sw.style.background = accentCss(h, c, tuneL(h, c, s0));
+        sw.setAttribute("aria-checked", String(h === accent.h && c === accent.c));
+    });
+    if (tuned) root.style.setProperty("--al", tuned);
+}
+
+/* The chroma range the picker works in. The floor keeps a grey pick
+   reading as a deliberate accent rather than as broken chrome. */
+const C_MIN = 12, C_MAX = 92;
+
+/* hex -> hue and chroma. Lightness is dropped on purpose: the mode
+   supplies it, which is what stops a near-black custom pick from
+   turning every accented label invisible. */
+function hexToHc(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+    if (!m) return null;
+    const n = parseInt(m[1], 16);
+    const r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+    let h = 0;
+    if (d) {
+        if (max === r)      h = ((g - b) / d) % 6;
+        else if (max === g) h = (b - r) / d + 2;
+        else                h = (r - g) / d + 4;
+        h *= 60;
+        if (h < 0) h += 360;
+    }
+    const li = (max + min) / 2;
+    const s = d ? d / (1 - Math.abs(2 * li - 1)) : 0;
+    /* Floor the chroma so a grey pick still reads as a deliberate accent. */
+    return { h: Math.round(h), c: Math.max(C_MIN, Math.min(C_MAX, Math.round(s * 100))) };
+}
+
+function applyDesign(d, save) {
+    const v = DESIGNS.includes(d) ? d : DESIGNS[0];
+    root.dataset.design = v;
+    $$("#designMenu .opt").forEach(o => o.setAttribute("aria-checked", String(o.dataset.set === v)));
+    if (save && !store.set("design", v)) sessionOnly();
+}
+
+function applyMode(m, save) {
+    const v = MODES.includes(m) ? m : MODES[0];
+    root.dataset.mode = v;
+    $$("#modeMenu .opt").forEach(o => o.setAttribute("aria-checked", String(o.dataset.set === v)));
+    tuneAccent();      /* the accent is re-lit for the new surface */
+    if (save && !store.set("mode", v)) sessionOnly();
+}
+
+let warned = false;
+function sessionOnly() {
+    if (warned) return;
+    warned = true;
+    notify("Appearance changed for this session only, saving it needs the page served over http");
+}
+
+/* ---------- menus ---------- */
+const MENUS = [["#designBtn", "#designMenu"], ["#modeBtn", "#modeMenu"], ["#accentBtn", "#accentMenu"]];
+
+function closeMenus(except) {
+    MENUS.forEach(([b, m]) => {
+        if (m === except) return;
+        $(m).hidden = true;
+        $(b).setAttribute("aria-expanded", "false");
+    });
+}
+MENUS.forEach(([b, m]) => {
+    $(b).addEventListener("click", e => {
+        e.stopPropagation();
+        const open = $(m).hidden;
+        closeMenus(open ? m : null);
+        $(m).hidden = !open;
+        $(b).setAttribute("aria-expanded", String(open));
+        if (open && m === "#accentMenu") paintWheel();
+    });
+});
+document.addEventListener("click", e => {
+    if (!MENUS.some(([b, m]) => $(m).contains(e.target) || $(b).contains(e.target))) closeMenus();
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenus(); });
+
+$$("#designMenu .opt").forEach(o => o.addEventListener("click", () => {
+    applyDesign(o.dataset.set, true);
+    closeMenus();
+}));
+$$("#modeMenu .opt").forEach(o => o.addEventListener("click", () => {
+    applyMode(o.dataset.set, true);
+    closeMenus();
+}));
+
+/* Swatches are built rather than written out: one source of truth for
+   the hues, and each button gets a real label for screen readers. */
+ACCENTS.forEach(a => {
+    const b = el("button", "swatch");
+    b.type = "button";
+    b.setAttribute("role", "menuitemradio");
+    b.setAttribute("aria-checked", "false");
+    b.setAttribute("aria-label", a.name);
+    b.title = a.name;
+    b.dataset.h = a.h;
+    b.dataset.c = a.c;
+    b.addEventListener("click", () => applyAccent(a, true));
+    $("#swatches").appendChild(b);
+});
+/* Wheel: angle is hue, distance from the middle is chroma. Pointer
+   capture means a drag that leaves the circle still tracks, and the
+   same handler covers mouse, pen and touch. */
+const wheel = $("#wheel");
+function pickFrom(e) {
+    const b = wheel.getBoundingClientRect();
+    const r = b.width / 2;
+    const x = e.clientX - b.left - r, y = e.clientY - b.top - r;
+    let h = Math.atan2(y, x) * 180 / Math.PI;
+    if (h < 0) h += 360;
+    const c = C_MIN + Math.min(1, Math.hypot(x, y) / (r - 7)) * (C_MAX - C_MIN);
+    applyAccent({ h: Math.round(h), c: Math.round(c), name: hcName(h, c) }, true);
+}
+const hcName = (h, c) => "H" + Math.round(h) + " C" + Math.round(c);
+
+wheel.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    wheel.setPointerCapture(e.pointerId);
+    pickFrom(e);
+});
+wheel.addEventListener("pointermove", e => {
+    if (wheel.hasPointerCapture(e.pointerId)) pickFrom(e);
+});
+wheel.addEventListener("keydown", e => {
+    const step = { ArrowLeft: [-4, 0], ArrowRight: [4, 0], ArrowUp: [0, 5], ArrowDown: [0, -5] }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const h = (accent.h + step[0] + 360) % 360;
+    const c = Math.max(C_MIN, Math.min(C_MAX, accent.c + step[1]));
+    applyAccent({ h: h, c: c, name: hcName(h, c) }, true);
+});
+
+/* Hex entry, for matching something exact. */
+$("#accentHex").addEventListener("input", e => {
+    const hc = hexToHc(e.target.value);
+    if (hc) applyAccent({ h: hc.h, c: hc.c, name: "#" + e.target.value.trim().replace(/^#/, "").toUpperCase() }, true);
+});
+
+/* ---------- restore appearance ---------- */
+applyDesign(store.get("design") || DESIGNS[0], false);
+applyMode(store.get("mode") || MODES[0], false);
+(() => {
+    let a = null;
+    try { a = JSON.parse(store.get("accent")); } catch (e) {}
+    applyAccent(a && isFinite(a.h) ? a : ACCENTS[0], false);
+})();
+
+/* ---------- tabs ---------- */
+const TABS = [["work", "pane-work"], ["preview", "pane-preview"], ["about", "pane-about"]];
+function tab(which) {
+    TABS.forEach(([id, pane]) => {
+        $("#tab-" + id).setAttribute("aria-selected", String(id === which));
+        $("#" + pane).hidden = id !== which;
+    });
+}
+TABS.forEach(([id]) => $("#tab-" + id).addEventListener("click", () => tab(id)));
+
+/* ---------- toggles ---------- */
+function toggle(node, onChange) {
+    const flip = () => {
+        const on = !node.classList.contains("active");
+        node.classList.toggle("active", on);
+        node.setAttribute("aria-checked", String(on));
+        onChange(on);
+    };
+    node.addEventListener("click", flip);
+    node.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); }
+    });
+}
+
+/* ---------- files ---------- */
+function download(name, text, type) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: type || "text/plain;charset=utf-8" }));
+    a.download = name;
+    a.click();
+    setTimeout(() => { try { URL.revokeObjectURL(a.href); } catch (e) {} }, 1000);
+}
+function read(file, cb) {
+    const r = new FileReader();
+    r.onload = () => cb(String(r.result), file);
+    r.onerror = () => notify("Could not read that file", true);
+    r.readAsText(file);
+}
+function dropzone(zone, input, cb) {
+    zone.addEventListener("click", () => input.click());
+    zone.addEventListener("keydown", e => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); }
+    });
+    input.addEventListener("change", () => {
+        if (input.files[0]) read(input.files[0], cb);
+        input.value = "";
+    });
+    zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("over"); });
+    zone.addEventListener("dragleave", () => zone.classList.remove("over"));
+    zone.addEventListener("drop", e => {
+        e.preventDefault();
+        zone.classList.remove("over");
+        const f = e.dataTransfer.files[0];
+        if (f) read(f, cb);
+    });
+}
+const escBr = s => esc(s).replace(/\r?\n/g, "<br>");
+
+const slug = s => (s || "itinerary").replace(/[^a-z0-9]+/gi, "-").toLowerCase().replace(/^-|-$/g, "") || "itinerary";
+const fname = ext => slug(state.meta.title) + "." + ext;
+
+/* ---------- themes: one definition for editor, preview and export ---------- */
+const THEMES = { plain: "Plain", sunny: "Countryside", beach: "Beach", winter: "Winter", city: "City break", evening: "Evening", night: "Night out", dusk: "Dusk", romantic: "Romantic", safari: "Safari / rainforest" };
+const BODY_FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+const THEME_CSS = `
+[data-theme="plain"] { --bg:#ffffff; --card:#ffffff; --sunken:#f5f5f5; --line:#d6d6d6; --fg:#111111; --muted:#555555;
+  --accent:#2b4c7e; --accent-ink:#ffffff; --accent-soft:#eef2f8; --alert-bg:#fff4e5; --alert-fg:#8a4b00;
+  --display:Georgia,"Times New Roman",serif; --body:${BODY_FONT}; --radius:4px; --hero-pad:2.75rem;
+  --hero:#ffffff; --hero-fg:#111111; --hero-accent:#2b4c7e; }
+[data-theme="sunny"] { --bg:#fffdf6; --card:#ffffff; --sunken:#fef8e7; --line:#e3dcc0; --fg:#1c2b1e; --muted:#4a5c4f;
+  --accent:#2c6a3d; --accent-ink:#ffffff; --accent-soft:#e6f2e8; --alert-bg:#fdece6; --alert-fg:#a33f22;
+  --display:ui-rounded,"SF Pro Rounded","Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif; --body:${BODY_FONT}; --radius:16px; --hero-pad:4.5rem;
+  --hero:radial-gradient(ellipse 60% 22% at 22% 104%,#5bad6f 97%,transparent 100%),radial-gradient(ellipse 58% 20% at 82% 106%,#3a7a4c 97%,transparent 100%),radial-gradient(circle at 50% 0%,rgba(255,238,88,.55),transparent 38%),linear-gradient(175deg,#87ceeb 0%,#b8e4f5 42%,#fde39a 78%,#f7c65a 100%); --hero-fg:#16261a; --hero-accent:#245a33; }
+[data-theme="beach"] { --bg:#fbf7ef; --card:#ffffff; --sunken:#f6efe0; --line:#e6dccb; --fg:#0f3140; --muted:#4a6470;
+  --accent:#00707c; --accent-ink:#ffffff; --accent-soft:#dff3f4; --alert-bg:#fdebe4; --alert-fg:#9c3a1c;
+  --display:ui-rounded,"SF Pro Rounded","Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif; --body:${BODY_FONT}; --radius:18px; --hero-pad:4rem;
+  --hero:radial-gradient(ellipse 120% 18% at 50% 100%,#ecd5a8 96%,transparent 100%),linear-gradient(180deg,#4fc0d2 0%,#8fdae4 45%,#c8eef0 80%,#f3e6c9 100%); --hero-fg:#0b2a37; --hero-accent:#005761; }
+[data-theme="winter"] { --bg:#f4f8fb; --card:#ffffff; --sunken:#eef4f9; --line:#d3e0ec; --fg:#14233a; --muted:#4b5d73;
+  --accent:#1f5f9e; --accent-ink:#ffffff; --accent-soft:#e4eef8; --alert-bg:#fdecec; --alert-fg:#a3262a;
+  --display:"Avenir Next","Segoe UI",system-ui,sans-serif; --body:${BODY_FONT}; --radius:10px; --hero-pad:2.75rem;
+  --hero:radial-gradient(#ffffff 1.6px,transparent 2.2px) 0 0/36px 36px,radial-gradient(rgba(255,255,255,.7) 1px,transparent 1.6px) 18px 18px/36px 36px,linear-gradient(180deg,#a9cbe8 0%,#d6e7f5 60%,#f4f8fb 100%); --hero-fg:#10223a; --hero-accent:#174c80; }
+[data-theme="city"] { --bg:#f3f2ef; --card:#ffffff; --sunken:#f7f6f3; --line:#dcdad5; --fg:#1b1b1b; --muted:#5a5a5a;
+  --accent:#b30f28; --accent-ink:#ffffff; --accent-soft:#f8e6e9; --alert-bg:#fff4e5; --alert-fg:#8a4b00;
+  --display:"Helvetica Neue",Helvetica,Arial,sans-serif; --body:${BODY_FONT}; --radius:2px; --hero-pad:2.75rem;
+  --hero:linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px) 0 0/48px 48px,#1b1b1b; --hero-fg:#f5f5f5; --hero-accent:#ff6b7a; }
+[data-theme="evening"] { --bg:#0e0e0e; --card:#1a1814; --sunken:#141210; --line:rgba(201,168,76,.24); --fg:#f5f2ed; --muted:#a89f94;
+  --accent:#c9a84c; --accent-ink:#0e0e0e; --accent-soft:rgba(201,168,76,.12); --alert-bg:rgba(231,111,81,.12); --alert-fg:#f0a08a;
+  --display:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; --body:${BODY_FONT}; --radius:8px; --hero-pad:2.75rem;
+  --hero:radial-gradient(ellipse at 50% -20%,rgba(201,168,76,.18),transparent 60%) #0e0e0e; --hero-fg:#f5f2ed; --hero-accent:#c9a84c; }
+[data-theme="night"] { --bg:#0a0612; --card:#150d24; --sunken:#0f0919; --line:rgba(255,63,164,.28); --fg:#f1ecff; --muted:#ab9fca;
+  --accent:#ff4fae; --accent-ink:#0a0612; --accent-soft:rgba(255,79,174,.13); --alert-bg:rgba(255,179,92,.12); --alert-fg:#ffb35c;
+  --display:Futura,"Century Gothic","Avenir Next",system-ui,sans-serif; --body:${BODY_FONT}; --radius:6px; --hero-pad:2.75rem;
+  --hero:radial-gradient(circle at 18% 25%,rgba(255,63,164,.38),transparent 42%),radial-gradient(circle at 82% 12%,rgba(0,229,255,.30),transparent 42%),radial-gradient(circle at 60% 110%,rgba(124,77,255,.35),transparent 50%),#0a0612; --hero-fg:#ffffff; --hero-accent:#40e8ff; }
+[data-theme="dusk"] { --bg:#1d1a2e; --card:#27233d; --sunken:#211d35; --line:rgba(255,171,107,.22); --fg:#f6eef0; --muted:#b9aec6;
+  --accent:#ffab6b; --accent-ink:#1d1a2e; --accent-soft:rgba(255,171,107,.12); --alert-bg:rgba(255,120,120,.12); --alert-fg:#ff9e9e;
+  --display:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; --body:${BODY_FONT}; --radius:12px; --hero-pad:2.75rem;
+  --hero:linear-gradient(180deg,#221d45 0%,#4b2f6b 40%,#86405f 75%,#a44d5c 100%); --hero-fg:#fff7f0; --hero-accent:#ffd3a1; }
+[data-theme="romantic"] { --bg:#fdf6f5; --card:#ffffff; --sunken:#fbefee; --line:#efd7dc; --fg:#3a1621; --muted:#6e4c55;
+  --accent:#9e2a4b; --accent-ink:#ffffff; --accent-soft:#f7e4e9; --alert-bg:#fff4e5; --alert-fg:#8a4b00;
+  --display:Didot,"Bodoni 72","Bodoni MT",Georgia,serif; --body:${BODY_FONT}; --radius:10px; --hero-pad:2.75rem;
+  --hero:radial-gradient(ellipse 70% 90% at 50% 0%,#f4cbd5,transparent 70%),#fdf6f5; --hero-fg:#3a1621; --hero-accent:#8e2242; }
+[data-theme="safari"] { --bg:#f5efe2; --card:#fffaf0; --sunken:#f2ead8; --line:#ddd0b3; --fg:#2a2418; --muted:#5e5440;
+  --accent:#2f5d34; --accent-ink:#ffffff; --accent-soft:#e5ecd9; --alert-bg:#f8e3d6; --alert-fg:#9a3d17;
+  --display:Rockwell,"Roboto Slab",Georgia,serif; --body:${BODY_FONT}; --radius:6px; --hero-pad:2.75rem;
+  --hero:linear-gradient(180deg,#17311b 0%,#244a29 50%,#3a5a2a 80%,#6b6a33 100%); --hero-fg:#fdf7e8; --hero-accent:#f2c97d; }
+
+.itin { color:var(--fg); background:var(--bg); font-family:var(--body); line-height:1.6; }
+.itin .hero { background:var(--hero); color:var(--hero-fg); text-align:center; padding:3.5rem 1.5rem var(--hero-pad,2.75rem); border-bottom:1px solid var(--line); }
+.itin .badge { font-size:2.4rem; line-height:1; margin-bottom:.6rem; }
+.itin .eyebrow { font-size:.75rem; letter-spacing:.2em; text-transform:uppercase; color:var(--hero-accent); font-weight:600; margin:0; }
+.itin h1 { font-family:var(--display); font-weight:400; font-size:clamp(2.2rem,6vw,4rem); line-height:1.1; margin:.35rem 0; }
+.itin .sub { color:var(--hero-accent); font-size:.9rem; letter-spacing:.08em; margin:0; }
+.itin .stats { display:flex; justify-content:center; gap:2.5rem; flex-wrap:wrap; margin-top:1.75rem; }
+.itin .stat b { display:block; font-family:var(--display); font-weight:400; font-size:2rem; line-height:1.1; color:var(--hero-accent); }
+.itin .stat span { font-size:.7rem; letter-spacing:.15em; text-transform:uppercase; }
+.itin main { max-width:820px; margin:0 auto; padding:2.5rem 1.25rem 3rem; }
+.itin .day { margin-bottom:3.25rem; }
+.itin .day-head { display:flex; gap:1rem; align-items:baseline; border-bottom:1px solid var(--line); padding-bottom:.75rem; margin-bottom:1.25rem; }
+.itin .day-num { font-family:var(--display); font-size:1.8rem; color:var(--accent); white-space:nowrap; }
+.itin h2 { font-size:.85rem; letter-spacing:.12em; text-transform:uppercase; font-weight:600; margin:0; }
+.itin .day-date { color:var(--muted); font-size:.85rem; margin:0; }
+.itin .stops { list-style:none; margin:0; padding:0; }
+.itin .stop { display:grid; grid-template-columns:80px 1fr; gap:0 1.25rem; position:relative; }
+.itin .stop::before { content:""; position:absolute; left:calc(80px + .62rem); top:0; bottom:0; width:1px; background:var(--line); }
+.itin .stop:last-child::before { bottom:.75rem; }
+.itin .time { font-size:.8rem; color:var(--accent); text-align:right; padding-top:1.05rem; font-weight:600; font-variant-numeric:tabular-nums; }
+.itin .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:1rem 1.2rem; margin:0 0 .75rem; }
+.itin h3 { font-family:var(--display); font-weight:500; font-size:1.1rem; line-height:1.3; margin:0; }
+.itin .loc { color:var(--muted); font-size:.8rem; margin:.1rem 0 0; }
+.itin .desc { font-size:.9rem; margin:.5rem 0 0; }
+.itin .alert { background:var(--alert-bg); color:var(--alert-fg); font-size:.82rem; border-radius:calc(var(--radius) / 2); padding:.4rem .65rem; margin:.6rem 0 0; }
+.itin .note { color:var(--muted); font-size:.8rem; border-left:2px solid var(--accent); padding-left:.6rem; margin:.6rem 0 0; }
+.itin .meta { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.75rem; align-items:center; }
+.itin .tag { font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; font-weight:600; padding:2px 8px; border-radius:999px;
+             background:var(--accent-soft); color:var(--accent); border:1px solid var(--line); }
+.itin .map { font-size:.75rem; color:var(--accent); text-decoration:none; border:1px solid var(--line); padding:2px 9px; border-radius:999px; }
+@media (hover:hover) { .itin .map:hover { border-color:var(--accent); } }
+.itin .sec { margin-top:3rem; }
+.itin .sec-title { font-family:var(--display); font-weight:400; font-size:1.7rem; color:var(--accent); border-bottom:1px solid var(--line);
+                   padding-bottom:.5rem; margin:0 0 1rem; letter-spacing:0; text-transform:none; }
+.itin .tips { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:.75rem; }
+.itin .tips .card { margin:0; }
+.itin .tips h3 { font-size:1rem; }
+.itin .tips p { font-size:.88rem; margin:.35rem 0 0; }
+.itin .check { list-style:none; margin:0; padding:0; }
+.itin .check li { border-bottom:1px dashed var(--line); }
+.itin .check label { display:flex; gap:.65rem; padding:.45rem 0; cursor:pointer; }
+.itin .check input { width:1.05rem; height:1.05rem; margin:.25rem 0 0; flex:none; accent-color:var(--accent); cursor:pointer; }
+.itin .check input:checked + div .ct { text-decoration:line-through; color:var(--muted); }
+.itin .cn { color:var(--muted); font-size:.82rem; }
+.itin table { width:100%; border-collapse:collapse; font-size:.9rem; }
+.itin th, .itin td { text-align:left; padding:.5rem .6rem; border-bottom:1px solid var(--line); vertical-align:top; }
+.itin th { font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+.itin .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.itin tfoot td { font-weight:700; border-bottom:0; }
+.itin .end { text-align:center; color:var(--muted); font-size:.75rem; padding:1rem 1rem 2rem; }
+@media (max-width:560px) {
+  .itin .stop { grid-template-columns:1fr; }
+  .itin .stop::before { display:none; }
+  .itin .time { text-align:left; padding:0 0 .2rem; }
+}
+@media print {
+  [data-theme] { --bg:#fff; --card:#fff; --fg:#111; --muted:#444; --line:#c8c8c8; --accent:#222; --accent-soft:#f2f2f2;
+                     --hero:#fff; --hero-fg:#111; --hero-accent:#333; --alert-bg:#fff; --alert-fg:#111; }
+  body { background:#fff; }
+  .itin .hero { padding:1rem 0 1.25rem; }
+  .itin main { padding:1.25rem 0 0; max-width:none; }
+  .itin .card, .itin .check li, .itin tr, .itin .day-head { break-inside:avoid; }
+  .itin .day-head { break-after:avoid; }
+  .itin .alert { border:1px solid #999; }
+  .itin .map { border:0; padding:0; }
+}`;
+$("#themeCss").textContent = THEME_CSS;
+
+/* ---------- state ---------- */
+function blankState() {
+    return {
+        schema: APP.schema,
+        app: APP.id,
+        meta: { title: "", subtitle: "", dates: "", badge: "", nights: "", currency: "EUR", theme: "evening", showStats: true },
+        days: [],
+        tips: [],
+        checklist: [],
+        costs: []
+    };
+}
+const blankDay   = () => ({ title: "", date: "", stops: [] });
+const blankStop  = () => ({ time: "", name: "", location: "", desc: "", tags: [], map: "", note: "", alert: "" });
+
+// Rebuild from untrusted input: only known fields, all coerced to bounded strings.
+const S = (v, max) => (v == null ? "" : String(v)).slice(0, max || 4000);
+const arr = (v, max) => (Array.isArray(v) ? v : []).slice(0, max || 100).filter(x => x && typeof x === "object");
+const tagList = v => (Array.isArray(v) ? v : S(v).split(",")).map(t => S(t, 40).trim()).filter(Boolean).slice(0, 12);
+
+function normalise(d) {
+    const b = blankState(), m = (d && typeof d.meta === "object" && d.meta) || {};
+    b.meta = {
+        title: S(m.title, 200), subtitle: S(m.subtitle, 200), dates: S(m.dates, 200), badge: S(m.badge, 16),
+        nights: S(m.nights, 4), currency: S(m.currency, 8) || "EUR",
+        theme: Object.hasOwn(THEMES, m.theme) ? m.theme : "evening",
+        showStats: m.showStats !== false
+    };
+    b.days = arr(d.days, 60).map(x => ({
+        title: S(x.title, 200), date: S(x.date, 200),
+        stops: arr(x.stops, 60).map(s => ({
+            time: S(s.time, 40), name: S(s.name, 200), location: S(s.location, 200), desc: S(s.desc),
+            tags: tagList(s.tags), map: S(s.map, 2000), note: S(s.note, 1000), alert: S(s.alert, 1000)
+        }))
+    }));
+    b.tips = arr(d.tips).map(x => ({ title: S(x.title, 200), text: S(x.text, 2000) }));
+    b.checklist = arr(d.checklist, 200).map(x => ({ text: S(x.text, 300), note: S(x.note, 300), done: x.done === true }));
+    b.costs = arr(d.costs).map(x => ({ item: S(x.item, 200), amount: S(x.amount, 20), note: S(x.note, 300) }));
+    return b;
+}
+
+let state = blankState();
+let openStops = new WeakSet();
+
+function persist() { store.set("state", JSON.stringify(state)); }
+function restore() {
+    try { const d = JSON.parse(store.get("state")); if (d && d.app === APP.id) { state = normalise(d); return true; } } catch (e) {}
+    return false;
+}
+
+function saveJson() {
+    const out = JSON.parse(JSON.stringify(state));
+    out.exported = new Date().toISOString();
+    out.version = APP.version;
+    download(fname("json"), JSON.stringify(out, null, 2), "application/json");
+    notify("Saved");
+}
+function loadJson(text) {
+    let d;
+    try { d = JSON.parse(text); } catch (e) { notify("That file is not valid JSON", true); return; }
+    if (!d || typeof d !== "object" || Array.isArray(d)) { notify("That is not an itinerary file", true); return; }
+    if (d.app && d.app !== APP.id &&
+        !confirm('That file was saved by "' + S(d.app, 40) + '", not ' + APP.id + ". Load it anyway?")) return;
+    if (d.schema > APP.schema &&
+        !confirm("That file was saved by a newer version. Some fields may be dropped. Continue?")) return;
+    state = normalise(d);
+    openStops = new WeakSet();
+    render();
+    notify("Loaded");
+}
+function reset() {
+    if (!confirm("Clear everything and start a new trip? Save JSON first if you want to keep this one.")) return;
+    const theme = state.meta.theme;
+    state = blankState();
+    state.meta.theme = theme;
+    openStops = new WeakSet();
+    render();
+    notify("Cleared");
+}
+
+/* ---------- derived values ---------- */
+function stats() {
+    const days = state.days.length;
+    const n = parseInt(state.meta.nights, 10);
+    const nights = Number.isFinite(n) && n >= 0 ? n : Math.max(days - 1, 0);
+    const stops = state.days.reduce((a, d) => a + d.stops.length, 0);
+    return { days, nights, stops };
+}
+const amount = v => { const n = parseFloat(String(v).replace(/[^0-9.\-]/g, "")); return Number.isFinite(n) ? n : 0; };
+const money = n => {
+    const c = state.meta.currency || "";
+    try { return new Intl.NumberFormat("en-IE", { style: "currency", currency: c }).format(n); }
+    catch (e) { return (c ? c + " " : "") + n.toFixed(2); }
+};
+const costTotal = () => state.costs.reduce((a, c) => a + amount(c.amount), 0);
+
+// A full https URL is used as given; anything else is treated as a place to search for.
+function mapUrl(v) {
+    v = S(v).trim();
+    if (!v) return "";
+    if (/^https:\/\//i.test(v)) {
+        try { const u = new URL(v); return u.protocol === "https:" ? u.href : ""; } catch (e) { return ""; }
+    }
+    if (/^[a-z][a-z0-9+.-]*:/i.test(v)) return "";   // javascript:, data:, http: etc. are refused
+    return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(v);
+}
+
+/* ---------- itinerary renderer (escaped string, shared by preview and export) ---------- */
+function itinBody(s) {
+    const m = s.meta, st = stats(), h = [];
+    h.push('<div class="itin"><header class="hero">');
+    if (m.badge) h.push('<div class="badge">' + esc(m.badge) + "</div>");
+    if (m.subtitle) h.push('<p class="eyebrow">' + esc(m.subtitle) + "</p>");
+    h.push("<h1>" + esc(m.title || "Untitled trip") + "</h1>");
+    if (m.dates) h.push('<p class="sub">' + esc(m.dates) + "</p>");
+    if (m.showStats && st.days) {
+        const cell = (n, l) => '<div class="stat"><b>' + n + "</b><span>" + l + "</span></div>";
+        h.push('<div class="stats">' + cell(st.days, st.days === 1 ? "Day" : "Days") +
+               cell(st.nights, st.nights === 1 ? "Night" : "Nights") +
+               cell(st.stops, st.stops === 1 ? "Stop" : "Stops") + "</div>");
+    }
+    h.push("</header><main>");
+
+    s.days.forEach((d, i) => {
+        h.push('<section class="day"><div class="day-head"><span class="day-num">Day ' + (i + 1) + "</span><div>");
+        if (d.title) h.push("<h2>" + esc(d.title) + "</h2>");
+        if (d.date) h.push('<p class="day-date">' + esc(d.date) + "</p>");
+        h.push('</div></div><ol class="stops">');
+        d.stops.forEach(p => {
+            h.push('<li class="stop"><div class="time">' + esc(p.time) + '</div><div class="card">');
+            h.push("<h3>" + esc(p.name || "Untitled stop") + "</h3>");
+            if (p.location) h.push('<p class="loc">' + esc(p.location) + "</p>");
+            if (p.desc) h.push('<p class="desc">' + escBr(p.desc) + "</p>");
+            if (p.alert) h.push('<p class="alert">' + escBr(p.alert) + "</p>");
+            if (p.note) h.push('<p class="note">' + escBr(p.note) + "</p>");
+            const url = mapUrl(p.map);
+            if (p.tags.length || url) {
+                h.push('<div class="meta">');
+                p.tags.forEach(t => h.push('<span class="tag">' + esc(t) + "</span>"));
+                if (url) h.push('<a class="map" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">Map</a>');
+                h.push("</div>");
+            }
+            h.push("</div></li>");
+        });
+        h.push("</ol></section>");
+    });
+
+    if (s.tips.length) {
+        h.push('<section class="sec"><h2 class="sec-title">Tips</h2><div class="tips">');
+        s.tips.forEach(t => h.push('<div class="card"><h3>' + esc(t.title) + "</h3><p>" + escBr(t.text) + "</p></div>"));
+        h.push("</div></section>");
+    }
+    if (s.checklist.length) {
+        h.push('<section class="sec"><h2 class="sec-title">Checklist</h2><ul class="check">');
+        // Real checkboxes: tickable with no script. Ticks reset on reload; "done" in the tool sets the starting state.
+        s.checklist.forEach(c => h.push('<li><label><input type="checkbox"' + (c.done ? " checked" : "") + '><div><span class="ct">' +
+            esc(c.text) + "</span>" + (c.note ? '<div class="cn">' + esc(c.note) + "</div>" : "") + "</div></label></li>"));
+        h.push("</ul></section>");
+    }
+    if (s.costs.length) {
+        h.push('<section class="sec"><h2 class="sec-title">Costs</h2><table><thead><tr><th>Item</th><th>Note</th><th class="num">Amount</th></tr></thead><tbody>');
+        s.costs.forEach(c => h.push("<tr><td>" + esc(c.item) + "</td><td>" + esc(c.note) + '</td><td class="num">' +
+            (String(c.amount).trim() ? esc(money(amount(c.amount))) : "") + "</td></tr>"));
+        h.push('</tbody><tfoot><tr><td>Total</td><td></td><td class="num">' + esc(money(costTotal())) + "</td></tr></tfoot></table></section>");
+    }
+    h.push('</main><p class="end">Made with way-point</p></div>');
+    return h.join("");
+}
+
+// The trip badge as the exported page's favicon: an SVG data URI (img-src data: is
+// allowed by the export CSP). Empty badge = no favicon line, browser default.
+function badgeFavicon(badge) {
+    badge = S(badge, 16).trim();
+    if (!badge) return "";
+    let n = [...badge].length;
+    try { n = [...new Intl.Segmenter().segment(badge)].length; } catch (e) {}
+    const fit = n > 1 ? " textLength='30' lengthAdjust='spacingAndGlyphs' font-size='18'" : " font-size='28'";
+    const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text x='16' y='17' text-anchor='middle'" +
+        " dominant-baseline='central' font-family='system-ui,sans-serif'" + fit + ">" + esc(badge) + "</text></svg>";
+    return '<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,' + encodeURIComponent(svg) + '">\n';
+}
+
+function exportHtml() {
+    const doc = '<!DOCTYPE html>\n<html lang="en" data-theme="' + esc(state.meta.theme) + '">\n<head>\n<meta charset="utf-8">\n' +
+        '<meta name="viewport" content="width=device-width, initial-scale=1">\n<meta name="referrer" content="no-referrer">\n' +
+        "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'\">\n" +
+        "<title>" + esc(state.meta.title || "Itinerary") + "</title>\n" + badgeFavicon(state.meta.badge) + "<style>*,*::before,*::after{box-sizing:border-box}html,body{margin:0}body{background:var(--bg)}" +
+        THEME_CSS + "</style>\n</head>\n<body>\n" + itinBody(state) + "\n</body>\n</html>\n";
+    download(fname("html"), doc, "text/html;charset=utf-8");
+    notify("HTML exported");
+}
+
+/* ---------- markdown ---------- */
+const md = s => S(s).replace(/([\\`*_[\]#<>|])/g, "\\$1");
+const mdCell = s => md(s).replace(/\r?\n/g, " ");
+function exportMd() {
+    const m = state.meta, st = stats(), o = [];
+    o.push("# " + md(m.title || "Untitled trip"), "");
+    if (m.subtitle) o.push("_" + md(m.subtitle) + "_", "");
+    if (m.dates) o.push(md(m.dates), "");
+    const pl = (n, w) => n + " " + w + (n === 1 ? "" : "s");
+    if (m.showStats && st.days) o.push("**" + pl(st.days, "day") + " - " + pl(st.nights, "night") + " - " + pl(st.stops, "stop") + "**", "");
+    state.days.forEach((d, i) => {
+        o.push("## Day " + (i + 1) + (d.title ? " - " + md(d.title) : ""), "");
+        if (d.date) o.push("_" + md(d.date) + "_", "");
+        d.stops.forEach(p => {
+            o.push("### " + (p.time ? md(p.time) + " - " : "") + md(p.name || "Untitled stop"), "");
+            if (p.location) o.push("Location: " + md(p.location), "");
+            if (p.desc) o.push(md(p.desc), "");
+            if (p.alert) o.push("> **Warning:** " + md(p.alert).replace(/\r?\n/g, "\n> "), "");
+            if (p.note) o.push("> " + md(p.note).replace(/\r?\n/g, "\n> "), "");
+            const url = mapUrl(p.map), meta = [];
+            if (p.tags.length) meta.push("Tags: " + p.tags.map(md).join(", "));
+            if (url) meta.push("[Map](<" + url.replace(/[<>]/g, "") + ">)");
+            if (meta.length) o.push(meta.join(" | "), "");
+        });
+    });
+    if (state.tips.length) {
+        o.push("## Tips", "");
+        state.tips.forEach(t => o.push("- **" + md(t.title) + "** " + mdCell(t.text)));
+        o.push("");
+    }
+    if (state.checklist.length) {
+        o.push("## Checklist", "");
+        state.checklist.forEach(c => o.push("- [" + (c.done ? "x" : " ") + "] " + mdCell(c.text) + (c.note ? " - " + mdCell(c.note) : "")));
+        o.push("");
+    }
+    if (state.costs.length) {
+        o.push("## Costs", "", "| Item | Note | Amount |", "|---|---|---:|");
+        state.costs.forEach(c => o.push("| " + mdCell(c.item) + " | " + mdCell(c.note) + " | " + (String(c.amount).trim() ? money(amount(c.amount)) : "") + " |"));
+        o.push("| **Total** | | **" + money(costTotal()) + "** |", "");
+    }
+    download(fname("md"), o.join("\n"), "text/markdown;charset=utf-8");
+    notify("Markdown exported");
+}
+
+/* ---------- editor building blocks ---------- */
+function field(obj, key, label, opt) {
+    opt = opt || {};
+    const w = el("label", "f" + (opt.wide ? " wide" : "") + (opt.narrow ? " narrow" : ""));
+    w.append(el("span", "fl", label));
+    const inp = el(opt.area ? "textarea" : "input", "field");
+    if (opt.area) inp.rows = opt.rows || 3; else inp.type = "text";
+    if (opt.ph) inp.placeholder = opt.ph;
+    inp.maxLength = opt.max || 4000;
+    const get = opt.get || (() => obj[key] || "");
+    const set = opt.set || (v => { obj[key] = v; });
+    inp.value = get();
+    inp.addEventListener("input", () => { set(inp.value); persist(); if (opt.on) opt.on(inp.value); });
+    w.append(inp);
+    return w;
+}
+function btn(txt, fn, cls, label) {
+    const b = el("button", "btn btn-sm" + (cls ? " " + cls : ""), txt);
+    b.type = "button";
+    if (label) { b.setAttribute("aria-label", label); b.title = label; }
+    b.addEventListener("click", e => { e.preventDefault(); fn(); });   // preventDefault stops a summary button toggling its <details>
+    return b;
+}
+function move(list, i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    persist(); render();
+}
+function removeAt(list, i, what) {
+    if (!confirm("Remove this " + what + "?")) return;
+    list.splice(i, 1);
+    persist(); render();
+}
+function controls(list, i, what) {
+    const c = el("div", "ctl");
+    c.append(btn("Up", () => move(list, i, -1), "", "Move " + what + " up"),
+             btn("Down", () => move(list, i, 1), "", "Move " + what + " down"),
+             btn("Remove", () => removeAt(list, i, what), "btn-ghost btn-danger", "Remove " + what));
+    return c;
+}
+
+/* ---------- editor render ---------- */
+function renderMeta() {
+    const m = state.meta, g = $("#metaFields");
+    g.replaceChildren(
+        field(m, "title", "Title", { ph: "Berlin", max: 200 }),
+        field(m, "subtitle", "Eyebrow", { ph: "Family adventure - Summer", max: 200 }),
+        field(m, "dates", "Dates line", { ph: "30 June - 2 July 2026", max: 200 }),
+        field(m, "badge", "Badge (emoji or short text)", { ph: "optional", max: 16 }),
+        field(m, "nights", "Nights (blank = days - 1)", { max: 4 }),
+        field(m, "currency", "Currency code", { ph: "EUR", max: 8, on: updateTotal })
+    );
+    const t = el("div", "toggle-item");
+    const sw = el("div", "toggle-switch" + (m.showStats ? " active" : ""));
+    sw.setAttribute("role", "switch"); sw.tabIndex = 0;
+    sw.setAttribute("aria-checked", String(m.showStats));
+    sw.setAttribute("aria-label", "Show days, nights and stops");
+    toggle(sw, on => { m.showStats = on; persist(); });
+    t.append(el("span", "toggle-label", "Show days / nights / stops"), sw);
+    g.append(t);
+}
+
+function stopEditor(day, si) {
+    const p = day.stops[si];
+    const d = el("details", "stop-ed");
+    if (openStops.has(p)) d.open = true;
+    d.addEventListener("toggle", () => { d.open ? openStops.add(p) : openStops.delete(p); });
+    const sum = el("summary");
+    const t = el("span", "t", p.time || "--:--"), n = el("span", "n", p.name || "New stop");
+    sum.append(t, n, controls(day.stops, si, "stop"));
+    d.append(sum);
+    const body = el("div", "body"), g = el("div", "grid");
+    g.append(
+        field(p, "time", "Time", { ph: "10:00 or Morning", max: 40, on: v => { t.textContent = v || "--:--"; } }),
+        field(p, "name", "Name", { ph: "German Spy Museum", max: 200, on: v => { n.textContent = v || "New stop"; } }),
+        field(p, "location", "Location", { ph: "Gorey, Co. Wexford", max: 200 }),
+        field(p, "map", "Map (https URL or search text)", { ph: "BER Airport", max: 2000 }),
+        field(p, "tags", "Tags (comma separated)", { ph: "Free, Walkable", max: 500,
+            get: () => p.tags.join(", "), set: v => { p.tags = tagList(v); } }),
+        field(p, "desc", "Description", { area: true, wide: true }),
+        field(p, "alert", "Warning (highlighted)", { area: true, rows: 2 }),
+        field(p, "note", "Note (route, getting there)", { area: true, rows: 2 })
+    );
+    body.append(g);
+    d.append(body);
+    return d;
+}
+
+function renderDays() {
+    const box = $("#days");
+    box.replaceChildren();
+    const st = stats();
+    $("#dayCount").textContent = st.days + " days, " + st.stops + " stops";
+    if (!state.days.length) box.append(el("div", "empty", "No days yet. Add one below, or load a saved trip."));
+    state.days.forEach((day, di) => {
+        const w = el("div", "day-ed"), head = el("div", "head");
+        head.append(el("span", "num", "Day " + (di + 1)),
+            field(day, "title", "Title", { ph: "Arrival - Historic core", max: 200 }),
+            field(day, "date", "Date", { ph: "Wednesday 30 June", max: 200 }),
+            controls(state.days, di, "day"));
+        w.append(head);
+        day.stops.forEach((_, si) => w.append(stopEditor(day, si)));
+        w.append(btn("Add stop", () => {
+            const s = blankStop(); day.stops.push(s); openStops.add(s); persist(); render();
+        }));
+        box.append(w);
+    });
+}
+
+function renderList(sel, list, what, build) {
+    const box = $(sel);
+    box.replaceChildren();
+    if (!list.length) box.append(el("div", "empty", "None yet."));
+    list.forEach((x, i) => {
+        const r = el("div", "item-row");
+        build(x, r);
+        r.append(controls(list, i, what));
+        box.append(r);
+    });
+}
+
+function updateTotal() {
+    $("#costTotal").textContent = "total " + money(costTotal());
+}
+
+function render() {
+    $("#expTheme").value = state.meta.theme;
+    $("#preview").dataset.theme = state.meta.theme;
+    renderMeta();
+    renderDays();
+    renderList("#tips", state.tips, "tip", (x, r) => r.append(
+        field(x, "title", "Title", { max: 200 }), field(x, "text", "Tip", { area: true, rows: 2, max: 2000 })));
+    renderList("#checklist", state.checklist, "item", (x, r) => {
+        const t = el("div", "toggle-item");
+        const sw = el("div", "toggle-switch" + (x.done ? " active" : ""));
+        sw.setAttribute("role", "switch"); sw.tabIndex = 0;
+        sw.setAttribute("aria-checked", String(x.done));
+        sw.setAttribute("aria-label", "Done");
+        toggle(sw, on => { x.done = on; persist(); });
+        t.append(el("span", "toggle-label", "Done"), sw);
+        r.append(t, field(x, "text", "Item", { ph: "Pre-book Reichstag dome", max: 300 }), field(x, "note", "Note", { max: 300 }));
+    });
+    renderList("#costs", state.costs, "cost", (x, r) => r.append(
+        field(x, "item", "Item", { max: 200 }), field(x, "note", "Note", { max: 300 }),
+        field(x, "amount", "Amount", { narrow: true, max: 20, on: updateTotal })));
+    updateTotal();
+    renderPreview();
+    persist();
+}
+
+function renderPreview() { $("#preview").innerHTML = itinBody(state); }   // every value inside is escaped by itinBody
+
+
+/* ---------- tabs, export theme ---------- */
+$("#tab-preview").addEventListener("click", renderPreview);
+Object.entries(THEMES).forEach(([id, name]) => { const o = el("option", null, name); o.value = id; $("#expTheme").append(o); });
+$("#expTheme").addEventListener("change", e => {
+    state.meta.theme = e.target.value;
+    $("#preview").dataset.theme = state.meta.theme;
+    persist();
+});
+
+/* ---------- actions ---------- */
+function printItin() { renderPreview(); window.print(); }
+window.addEventListener("beforeprint", renderPreview);
+$("#btnSave").addEventListener("click", saveJson);
+$("#btnLoad").addEventListener("click", () => $("#fileIn").click());
+$("#fileIn").addEventListener("change", e => { if (e.target.files[0]) read(e.target.files[0], loadJson); e.target.value = ""; });
+["#btnHtml", "#btnHtml2"].forEach(b => $(b).addEventListener("click", exportHtml));
+["#btnMd", "#btnMd2"].forEach(b => $(b).addEventListener("click", exportMd));
+["#btnPrint", "#btnPrint2"].forEach(b => $(b).addEventListener("click", printItin));
+$("#btnReset").addEventListener("click", reset);
+$("#btnAddDay").addEventListener("click", () => { state.days.push(blankDay()); persist(); render(); });
+$("#btnAddTip").addEventListener("click", () => { state.tips.push({ title: "", text: "" }); persist(); render(); });
+$("#btnAddCheck").addEventListener("click", () => { state.checklist.push({ text: "", note: "", done: false }); persist(); render(); });
+$("#btnAddCost").addEventListener("click", () => { state.costs.push({ item: "", amount: "", note: "" }); persist(); render(); });
+
+document.addEventListener("keydown", e => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    const k = e.key.toLowerCase();
+    if (k === "s") { e.preventDefault(); saveJson(); }
+    if (k === "o") { e.preventDefault(); $("#fileIn").click(); }
+});
+// Drop a JSON file anywhere on the page.
+document.addEventListener("dragover", e => { e.preventDefault(); document.body.classList.add("drop-over"); });
+document.addEventListener("dragleave", e => { if (!e.relatedTarget) document.body.classList.remove("drop-over"); });
+document.addEventListener("drop", e => {
+    e.preventDefault();
+    document.body.classList.remove("drop-over");
+    const f = e.dataTransfer.files[0];
+    if (f) read(f, loadJson);
+});
+
+/* ---------- example + schema ---------- */
+const EXAMPLE = {
+    "app": "way-point",
+    "schema": 1,
+    "meta": {
+        "title": "Copenhagen",
+        "subtitle": "Long weekend",
+        "dates": "Friday - Sunday",
+        "badge": "🇩🇰",
+        "nights": "",
+        "currency": "EUR",
+        "theme": "city",
+        "showStats": true
+    },
+    "days": [
+        {
+            "title": "Arrival · Nyhavn · Canal tour · Tivoli",
+            "date": "Friday",
+            "stops": [
+                {
+                    "time": "10:00",
+                    "name": "Arrive at CPH",
+                    "location": "Kastrup",
+                    "desc": "Activate the Copenhagen Card in the app, then take the M2 metro from Terminal 3 to Kongens Nytorv, about 15 minutes.",
+                    "tags": [
+                        "Copenhagen Card covers metro"
+                    ],
+                    "map": "Copenhagen Airport Terminal 3",
+                    "note": "",
+                    "alert": "The card is digital only. Activate it in the app before you board."
+                },
+                {
+                    "time": "11:00",
+                    "name": "Drop bags at the hotel",
+                    "location": "",
+                    "desc": "",
+                    "tags": [],
+                    "map": "",
+                    "note": "Short walk from Kongens Nytorv metro",
+                    "alert": ""
+                },
+                {
+                    "time": "12:00",
+                    "name": "Broens Gadekøkken - lunch",
+                    "location": "Christianshavn",
+                    "desc": "Year-round street food square at the foot of the Inner Harbour Bridge. Around a dozen stalls; the Gasoline Grill burger is the usual pick.",
+                    "tags": [
+                        "Walk-in"
+                    ],
+                    "map": "Broens Gadekoekken Copenhagen",
+                    "note": "5 min walk from Nyhavn",
+                    "alert": ""
+                },
+                {
+                    "time": "13:15",
+                    "name": "Nyhavn",
+                    "location": "",
+                    "desc": "The postcard harbour of painted 17th-century townhouses and old wooden ships. Walk the quayside before the tour boats fill up.",
+                    "tags": [
+                        "Free"
+                    ],
+                    "map": "Nyhavn Copenhagen",
+                    "note": "Cross the Inner Harbour Bridge",
+                    "alert": ""
+                },
+                {
+                    "time": "14:00",
+                    "name": "Canal tour from Nyhavn",
+                    "location": "",
+                    "desc": "About an hour on the water: Christiansborg, the Opera House, Christianshavn and the Little Mermaid from the harbour side. Sit on the open deck if the weather allows.",
+                    "tags": [
+                        "Copenhagen Card"
+                    ],
+                    "map": "Canal tour Nyhavn Copenhagen",
+                    "note": "Departs from the Nyhavn quay",
+                    "alert": ""
+                },
+                {
+                    "time": "15:30",
+                    "name": "Amalienborg and the Marble Church",
+                    "location": "",
+                    "desc": "The royal residence's four identical palaces around an octagonal square, with the dome of Frederik's Church lined up behind. Free to walk through.",
+                    "tags": [
+                        "Free outside",
+                        "Copenhagen Card for museum"
+                    ],
+                    "map": "Amalienborg Copenhagen",
+                    "note": "10 min walk north from Nyhavn",
+                    "alert": ""
+                },
+                {
+                    "time": "16:30",
+                    "name": "Back to hotel",
+                    "location": "",
+                    "desc": "Rest before the evening.",
+                    "tags": [],
+                    "map": "",
+                    "note": "",
+                    "alert": ""
+                },
+                {
+                    "time": "18:30",
+                    "name": "Tivoli Gardens",
+                    "location": "Vesterbrogade 3",
+                    "desc": "The 1843 pleasure garden in the middle of the city. Go for the evening, when thousands of lights come on. Entry is covered by the card; rides are paid separately. Eat inside the gardens.",
+                    "tags": [
+                        "Copenhagen Card entry",
+                        "Rides extra"
+                    ],
+                    "map": "Tivoli Gardens Copenhagen",
+                    "note": "M3 to Copenhagen Central Station, entrance opposite",
+                    "alert": "Tivoli is seasonal and closes for part of the year. Check the dates before you travel."
+                }
+            ]
+        },
+        {
+            "title": "Rosenborg · Round Tower · Christiansborg · Christiania · Reffen",
+            "date": "Saturday",
+            "stops": [
+                {
+                    "time": "09:00",
+                    "name": "GRØD at Torvehallerne - breakfast",
+                    "location": "Frederiksborggade 21",
+                    "desc": "The original Copenhagen porridge bar inside the Torvehallerne glass market halls. Oat porridge with caramelised apple is the pick; browse the stalls after.",
+                    "tags": [
+                        "Walk-in"
+                    ],
+                    "map": "Torvehallerne Copenhagen",
+                    "note": "Metro to Nørreport",
+                    "alert": ""
+                },
+                {
+                    "time": "10:00",
+                    "name": "Rosenborg Castle and the King's Garden",
+                    "location": "Øster Voldgade 4A",
+                    "desc": "Renaissance castle built as Christian IV's summer house, with the Crown Jewels in the vaulted treasury. Allow 1 to 1.5 hours, then walk out through the King's Garden.",
+                    "tags": [
+                        "Copenhagen Card"
+                    ],
+                    "map": "Rosenborg Castle Copenhagen",
+                    "note": "5 min walk from Torvehallerne",
+                    "alert": "Busy on summer weekends. Arrive at opening."
+                },
+                {
+                    "time": "11:45",
+                    "name": "Round Tower",
+                    "location": "Købmagergade 52A",
+                    "desc": "A 17th-century observatory with a spiral ramp instead of stairs and a wide view over the old town rooftops. 30 to 45 minutes.",
+                    "tags": [
+                        "Copenhagen Card"
+                    ],
+                    "map": "Rundetaarn Copenhagen",
+                    "note": "10 min walk south through the Latin Quarter",
+                    "alert": ""
+                },
+                {
+                    "time": "12:45",
+                    "name": "Smørrebrød lunch",
+                    "location": "",
+                    "desc": "Open-faced rye sandwiches are the classic Danish lunch. Plenty of options around Strøget and the Latin Quarter.",
+                    "tags": [
+                        "Your call"
+                    ],
+                    "map": "",
+                    "note": "Head toward Slotsholmen after",
+                    "alert": ""
+                },
+                {
+                    "time": "14:00",
+                    "name": "Christiansborg Palace",
+                    "location": "Prins Jørgens Gård 1",
+                    "desc": "Seat of the Danish parliament. The Royal Reception Rooms and the tapestries are the highlight. The tower has one of the best free views in the city.",
+                    "tags": [
+                        "Copenhagen Card",
+                        "Tower free"
+                    ],
+                    "map": "Christiansborg Palace Copenhagen",
+                    "note": "Walk down Strøget to Slotsholmen",
+                    "alert": ""
+                },
+                {
+                    "time": "16:00",
+                    "name": "Christianshavn and Christiania",
+                    "location": "",
+                    "desc": "Canal-side streets and houseboats, then Freetown Christiania, the self-governing commune on the old barracks site. Wander the lanes and the lakeside paths.",
+                    "tags": [
+                        "Free"
+                    ],
+                    "map": "Christiania Copenhagen",
+                    "note": "Cross Knippelsbro to Christianshavn",
+                    "alert": "No photos on Pusher Street, and keep your phone away there."
+                },
+                {
+                    "time": "18:30",
+                    "name": "Reffen - dinner",
+                    "location": "Refshalevej 167A",
+                    "desc": "Northern Europe's largest street food market, on the old shipyard at Refshaleøen. Dozens of stalls, bars and harbour-side seating. Stay for sunset over the water.",
+                    "tags": [
+                        "Walk-in",
+                        "Copenhagen Card for harbour bus"
+                    ],
+                    "map": "Reffen Copenhagen",
+                    "note": "Harbour bus from Nyhavn",
+                    "alert": "Seasonal, roughly mid-March to the end of September."
+                },
+                {
+                    "time": "21:30",
+                    "name": "Back to hotel",
+                    "location": "",
+                    "desc": "",
+                    "tags": [],
+                    "map": "",
+                    "note": "Harbour bus or bus 2A back to the centre",
+                    "alert": ""
+                }
+            ]
+        },
+        {
+            "title": "Østerbro · Little Mermaid · Design · Kødbyen · Carlsberg · Airport",
+            "date": "Sunday",
+            "stops": [
+                {
+                    "time": "09:00",
+                    "name": "Juno the Bakery - breakfast",
+                    "location": "Århusgade 48",
+                    "desc": "Small Østerbro bakery known for its cardamom buns. Expect a queue on weekends, and they can sell out.",
+                    "tags": [
+                        "Walk-in",
+                        "Go early"
+                    ],
+                    "map": "Juno the Bakery Copenhagen",
+                    "note": "Metro to Trianglen, then walk",
+                    "alert": ""
+                },
+                {
+                    "time": "10:15",
+                    "name": "Kastellet and the Little Mermaid",
+                    "location": "",
+                    "desc": "Walk the ramparts of the star-shaped 17th-century fortress, then down to the harbour for Edvard Eriksen's statue. Smaller than people expect.",
+                    "tags": [
+                        "Free"
+                    ],
+                    "map": "Kastellet Copenhagen",
+                    "note": "20 min walk from Juno",
+                    "alert": ""
+                },
+                {
+                    "time": "11:30",
+                    "name": "Design Museum Denmark",
+                    "location": "Bredgade 68",
+                    "desc": "Danish furniture and industrial design in a former hospital. The chair hall is the highlight. Allow about an hour.",
+                    "tags": [
+                        "Copenhagen Card"
+                    ],
+                    "map": "Designmuseum Danmark Copenhagen",
+                    "note": "10 min walk from Kastellet",
+                    "alert": ""
+                },
+                {
+                    "time": "13:00",
+                    "name": "Kødbyen - lunch",
+                    "location": "Flæsketorvet",
+                    "desc": "The Meatpacking District, now bars and restaurants in the old white-tiled halls. WarPigs does Texas-style brisket by weight.",
+                    "tags": [
+                        "Walk-in"
+                    ],
+                    "map": "Koedbyen Copenhagen",
+                    "note": "M3 to Copenhagen Central Station, 10 min walk",
+                    "alert": ""
+                },
+                {
+                    "time": "14:30",
+                    "name": "Home of Carlsberg",
+                    "location": "Gamle Carlsberg Vej 11",
+                    "desc": "The historic brewery site, with the Elephant Gate, the stables and a tasting at the end. Allow about 1.5 hours.",
+                    "tags": [
+                        "Copenhagen Card"
+                    ],
+                    "map": "Home of Carlsberg Copenhagen",
+                    "note": "Bus from Kødbyen, about 15 minutes",
+                    "alert": ""
+                },
+                {
+                    "time": "16:30",
+                    "name": "Collect bags",
+                    "location": "",
+                    "desc": "",
+                    "tags": [],
+                    "map": "",
+                    "note": "Back to the hotel near Kongens Nytorv",
+                    "alert": ""
+                },
+                {
+                    "time": "17:15",
+                    "name": "Head to CPH - flight departs 19:30",
+                    "location": "Kastrup",
+                    "desc": "Aim to be at the airport two hours before departure.",
+                    "tags": [
+                        "Copenhagen Card covers metro"
+                    ],
+                    "map": "Copenhagen Airport Terminal 3",
+                    "note": "M2 from Kongens Nytorv to the airport, about 15 minutes",
+                    "alert": "The 72h card started Friday 10:00, so it still covers this trip."
+                }
+            ]
+        }
+    ],
+    "tips": [
+        {
+            "title": "Copenhagen Card",
+            "text": "The DISCOVER card covers 80+ attractions and all public transport in the Capital Region, including the airport metro and harbour buses. It is digital and lives in the app. A 72h card started on arrival covers the whole weekend."
+        },
+        {
+            "title": "Bikes have right of way",
+            "text": "Cycle lanes are busy and fast. Look both ways before stepping off the kerb, and never stand in a bike lane."
+        },
+        {
+            "title": "Card, not cash",
+            "text": "Almost everywhere is card-only or card-preferred. Prices are in Danish kroner."
+        },
+        {
+            "title": "Weather",
+            "text": "It can be windy along the harbour even in summer. Bring a light layer for the canal tour and Reffen in the evening."
+        }
+    ],
+    "checklist": [
+        {
+            "text": "Copenhagen Card DISCOVER 72h",
+            "note": "Do now - buy online, activate in the app on arrival.",
+            "done": false
+        },
+        {
+            "text": "Check Tivoli and Reffen dates",
+            "note": "Do now - both are seasonal.",
+            "done": false
+        },
+        {
+            "text": "Book a table in Tivoli",
+            "note": "Book soon - Friday evening fills up.",
+            "done": false
+        },
+        {
+            "text": "Download the Copenhagen Card app",
+            "note": "Before you fly.",
+            "done": false
+        },
+        {
+            "text": "Plug adapter",
+            "note": "Denmark uses type C and K sockets.",
+            "done": false
+        }
+    ],
+    "costs": [
+        {
+            "item": "Flights",
+            "amount": "180",
+            "note": "Return, estimate"
+        },
+        {
+            "item": "Hotel",
+            "amount": "320",
+            "note": "2 nights, estimate"
+        },
+        {
+            "item": "Copenhagen Card 72h",
+            "amount": "150",
+            "note": "Per adult, estimate"
+        },
+        {
+            "item": "Food and drink",
+            "amount": "200",
+            "note": "Estimate"
+        },
+        {
+            "item": "Tivoli rides",
+            "amount": "40",
+            "note": "Estimate"
+        }
+    ]
+};
+// The About tab shows the shape, not all 25 stops.
+const SAMPLE = Object.assign({}, EXAMPLE, {
+    days: [Object.assign({}, EXAMPLE.days[0], { stops: EXAMPLE.days[0].stops.slice(0, 1) })],
+    tips: EXAMPLE.tips.slice(0, 1), checklist: EXAMPLE.checklist.slice(0, 1),
+    costs: EXAMPLE.costs.slice(0, 1)
+});
+$("#schema").textContent = JSON.stringify(SAMPLE, null, 2);
+$("#btnExample").addEventListener("click", () => {
+    if (state.days.length && !confirm("Replace the current trip with the example?")) return;
+    state = normalise(EXAMPLE); openStops = new WeakSet(); render(); tab("work"); notify("Example loaded");
+});
+
+
+/* ---------- version, in the footer only ---------- */
+$("#footVer").textContent = "v" + APP.version;
+
+restore();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+name: checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    uses: shanemc92/.github/.github/workflows/static-checks.yml@main
+    # Two escape hatches, both of which should stay unused for a tool built
+    # from this template:
+    #
+    #   skip-csp-check: true    index.html has no CSP meta tag
+    #   allow-off-origin: true  the page loads a script or stylesheet from
+    #                           another origin
+    #
+    # If you find yourself reaching for either, fix the tool instead. The
+    # template ships a CSP and vendors nothing, so a failure here means
+    # something was added that should not have been.

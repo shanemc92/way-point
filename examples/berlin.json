@@ -1,0 +1,356 @@
+{
+  "app": "way-point",
+  "schema": 1,
+  "meta": {
+    "title": "Berlin",
+    "subtitle": "3 day itinerary",
+    "dates": "Wednesday - Friday",
+    "badge": "🇩🇪",
+    "nights": "",
+    "currency": "EUR",
+    "theme": "evening",
+    "showStats": true
+  },
+  "days": [
+    {
+      "title": "Arrival · Historic core · Spy Museum · Pizza",
+      "date": "Wednesday",
+      "stops": [
+        {
+          "time": "10:00",
+          "name": "Arrival at BER",
+          "location": "BER Airport",
+          "desc": "Validate your WelcomeCard ABC at the airport. Take the FEX or S9 into the city and check in near Gendarmenmarkt.",
+          "tags": [
+            "WelcomeCard covers airport"
+          ],
+          "map": "https://maps.google.com/?q=Berlin+Brandenburg+Airport+BER",
+          "note": "",
+          "alert": "Don't board the FEX before the printed start time on your card."
+        },
+        {
+          "time": "12:00",
+          "name": "Café Nénom - breakfast",
+          "location": "Charlottenstraße 34",
+          "desc": "Tucked right beside the Hotel Titanic on Charlottenstraße. Opens 8am. Fresh pastries, halloumi wraps, great chai latte, and one of the few spots in Berlin serving Arabic coffee with a date on the side. A lovely spot to decompress after the journey.",
+          "tags": [
+            "Walk-in"
+          ],
+          "map": "https://maps.google.com/?q=Cafe+Nenom+Charlottenstrasse+34+Berlin",
+          "note": "Steps from the hotel",
+          "alert": ""
+        },
+        {
+          "time": "12:30",
+          "name": "Historic core - walkable loop",
+          "location": "Mitte",
+          "desc": "Gendarmenmarkt → Brandenburg Gate → Reichstag Building (dome pre-booked) → Holocaust Memorial. All free, all walkable.",
+          "tags": [
+            "Free",
+            "Reichstag pre-booked",
+            "Walkable"
+          ],
+          "map": "https://maps.google.com/?q=Gendarmenmarkt+Berlin",
+          "note": "",
+          "alert": ""
+        },
+        {
+          "time": "14:30",
+          "name": "beets&roots - lunch",
+          "location": "Potsdamer Platz",
+          "desc": "Fresh bowl restaurant right at Potsdamer Platz, enter via Ebertstraße. Order on the touchscreen: Caesar salads, seasonal bowls, excellent dressings. Fast, healthy and genuinely tasty.",
+          "tags": [
+            "Walk-in"
+          ],
+          "map": "https://maps.google.com/?q=beets+and+roots+Potsdamer+Platz+Leipziger+Platz+18+Berlin",
+          "note": "Short walk south from the historic core",
+          "alert": ""
+        },
+        {
+          "time": "15:30",
+          "name": "German Spy Museum",
+          "location": "Leipziger Platz 9",
+          "desc": "Book a timed slot online, cheaper than door price and avoids any queue. Allow a good 2 hours; the laser maze is a highlight. 1,000+ exhibits across 3,000m² covering espionage from biblical times to modern cyber surveillance.",
+          "tags": [
+            "Pre-book online",
+            "~25% WelcomeCard discount"
+          ],
+          "map": "https://maps.google.com/?q=German+Spy+Museum+Berlin+Leipziger+Platz+9",
+          "note": "U2 → Potsdamer Platz",
+          "alert": ""
+        },
+        {
+          "time": "17:30",
+          "name": "Back to hotel",
+          "location": "",
+          "desc": "",
+          "tags": [],
+          "map": "",
+          "note": "U2 Potsdamer Platz → Stadtmitte",
+          "alert": ""
+        },
+        {
+          "time": "19:30",
+          "name": "Standard Serious Pizza",
+          "location": "",
+          "desc": "One of Berlin's best pizza spots. Sourdough bases, serious ingredients, relaxed atmosphere.",
+          "tags": [],
+          "map": "https://maps.google.com/?q=Standard+Serious+Pizza+Berlin",
+          "note": "U2 Stadtmitte → Rosa-Luxemburg-Platz, 5 min walk",
+          "alert": ""
+        }
+      ]
+    },
+    {
+      "title": "Zoo · Blacklight Mini Golf · Mall of Berlin · Amrit",
+      "date": "Thursday",
+      "stops": [
+        {
+          "time": "08:30",
+          "name": "Die Creme - breakfast",
+          "location": "Augsburger Str. 13",
+          "desc": "Opens 7:30am. Eggs benedict, Dutch pancakes, pistachio croissants. Relaxed neighbourhood café right on your route west toward the Zoo. Quick turnover so no long waits.",
+          "tags": [
+            "Walk-in"
+          ],
+          "map": "https://maps.google.com/?q=Die+Creme+Berlin+Augsburger+Str+13",
+          "note": "Near Wittenbergplatz, on the way west",
+          "alert": ""
+        },
+        {
+          "time": "09:00",
+          "name": "Berlin Zoo",
+          "location": "Hardenbergplatz 8",
+          "desc": "One of the most species-rich zoos in the world with over 20,000 animals. Pandas, elephants, hippos, giraffes; give it a good 3 hours. Buy tickets online in advance to save time at the gate.",
+          "tags": [],
+          "map": "https://maps.google.com/?q=Berlin+Zoological+Garden+Hardenbergplatz+8",
+          "note": "U2/S-Bahn → Zoologischer Garten, 2 min walk from Die Creme",
+          "alert": ""
+        },
+        {
+          "time": "12:00",
+          "name": "Grab lunch on the way to Tempelhof",
+          "location": "",
+          "desc": "Plenty of options along the U6 corridor south. Pick somewhere that takes your fancy.",
+          "tags": [
+            "Your call"
+          ],
+          "map": "",
+          "note": "Head toward U6 for Tempelhof",
+          "alert": ""
+        },
+        {
+          "time": "13:30",
+          "name": "3D Blacklight Mini Golf - Tempelhof",
+          "location": "Ordensmeisterstraße 1",
+          "desc": "18 holes of glow-in-the-dark mini golf with 3D glasses and neon artwork. Great fun for two people; budget about 1.5 hours. Opens 10am daily. You can order a drink to carry round with you.",
+          "tags": [],
+          "map": "https://maps.google.com/?q=3D+Black+Light+Mini+Golf+Berlin+Ordensmeisterstrasse+1",
+          "note": "U6 → Kaiserin-Augusta-Str., short walk. ~20 mins from Potsdamer Platz.",
+          "alert": ""
+        },
+        {
+          "time": "15:30",
+          "name": "Mall of Berlin - afternoon wander",
+          "location": "Leipziger Platz 12",
+          "desc": "270+ shops across multiple floors at Potsdamer Platz. Modern, spacious and easy to navigate. Good for a browse, a coffee stop, or picking up anything you need for the rest of the trip.",
+          "tags": [],
+          "map": "https://maps.google.com/?q=Mall+of+Berlin+Leipziger+Platz+12",
+          "note": "U6 → Stadtmitte, then U2 → Potsdamer Platz",
+          "alert": ""
+        },
+        {
+          "time": "17:30",
+          "name": "Back to hotel",
+          "location": "",
+          "desc": "",
+          "tags": [],
+          "map": "",
+          "note": "U2 Potsdamer Platz → Stadtmitte",
+          "alert": ""
+        },
+        {
+          "time": "19:30",
+          "name": "Amrit - Indian dinner",
+          "location": "Ebertstraße 14",
+          "desc": "4.7 stars from 7,600+ reviews, one of Berlin's most acclaimed Indian restaurants. Rich, well-spiced curries, excellent naan, and great cocktails. Located right beside Potsdamer Platz.",
+          "tags": [
+            "Book in advance"
+          ],
+          "map": "https://maps.google.com/?q=Amrit+Berlin+Ebertstrasse+14",
+          "note": "Near Potsdamer Platz, U2 or short walk",
+          "alert": ""
+        }
+      ]
+    },
+    {
+      "title": "East Side Gallery · ikono · Dom · DDR Museum · Bernauer Str. · Checkpoint Charlie · Topography · KERB · Airport",
+      "date": "Friday",
+      "stops": [
+        {
+          "time": "08:30",
+          "name": "Milch&Zucker - breakfast",
+          "location": "Warschauer Str. 70",
+          "desc": "Relaxed Friedrichshain café right on Warschauer Str., the same stop you need for the East Side Gallery. Opens 7:30am on Fridays. Fresh juices, smoothies, vegan and veggie options, scrambled eggs and croissants. Plenty of space inside.",
+          "tags": [
+            "Walk-in"
+          ],
+          "map": "https://maps.google.com/?q=Milch+und+Zucker+Berlin+Warschauer+Str+70",
+          "note": "S/U-Bahn → Warschauer Str.",
+          "alert": ""
+        },
+        {
+          "time": "09:30",
+          "name": "East Side Gallery",
+          "location": "",
+          "desc": "1.3km of the original Berlin Wall turned into the world's largest open-air gallery. Over 100 murals painted by artists from 21 countries in 1990. Go early before the crowds build; allow about an hour to walk the full length.",
+          "tags": [
+            "Free"
+          ],
+          "map": "https://maps.google.com/?q=East+Side+Gallery+Berlin",
+          "note": "Short walk from Milch&Zucker along the Spree",
+          "alert": ""
+        },
+        {
+          "time": "10:45",
+          "name": "ikono Berlin",
+          "location": "Rathausstraße 6",
+          "desc": "17 immersive rooms at Alexanderplatz where art, technology and the unexpected collide. About an hour of sensory experiences: floating balloons, neon arcades, Tokyo-inspired alleyways. Book timed entry at ikono.global and check for WelcomeCard discount in the app.",
+          "tags": [
+            "Pre-book at ikono.global",
+            "WelcomeCard discount"
+          ],
+          "map": "https://maps.google.com/?q=IKONO+Berlin+Rathausstrasse+6+Alexanderplatz",
+          "note": "Walk or U5/U8 → Alexanderplatz (~15 mins from East Side Gallery)",
+          "alert": ""
+        },
+        {
+          "time": "12:00",
+          "name": "Berliner Dom - exterior",
+          "location": "Am Lustgarten",
+          "desc": "Berlin's magnificent neo-Renaissance cathedral on Museum Island. Walk past, admire the green copper dome and golden cross from the Lustgarten square, and take in the view along the river. Worth 20-30 mins from the outside alone.",
+          "tags": [
+            "No ticket needed"
+          ],
+          "map": "https://maps.google.com/?q=Berliner+Dom+Am+Lustgarten+Berlin",
+          "note": "Walk from Alexanderplatz along the river (~12 mins)",
+          "alert": ""
+        },
+        {
+          "time": "12:30",
+          "name": "DDR Museum",
+          "location": "Karl-Liebknecht-Str. 1",
+          "desc": "Hands-on interactive museum exploring everyday life in communist East Germany. Open drawers full of Stasi files, sit inside a Trabant, explore a reconstructed GDR apartment, and experience a simulated lift ride up a Soviet-style tower block. Allow around 90 mins. Right beside the Berliner Dom.",
+          "tags": [
+            "WelcomeCard discount"
+          ],
+          "map": "https://maps.google.com/?q=DDR+Museum+Berlin+Karl-Liebknecht-Str+1",
+          "note": "Steps from Berliner Dom on Karl-Liebknecht-Str.",
+          "alert": ""
+        },
+        {
+          "time": "14:15",
+          "name": "Bernauer Straße Memorial",
+          "location": "",
+          "desc": "The most complete surviving section of the Berlin Wall. The preserved death strip, watchtowers, Chapel of Reconciliation built on the site of a demolished church, and a detailed documentation centre covering the history of the division. Allow at least an hour.",
+          "tags": [
+            "Free"
+          ],
+          "map": "https://maps.google.com/?q=Berlin+Wall+Memorial+Bernauer+Strasse",
+          "note": "U8 → Bernauer Straße",
+          "alert": ""
+        },
+        {
+          "time": "15:30",
+          "name": "Checkpoint Charlie",
+          "location": "",
+          "desc": "The most famous crossing point between East and West Berlin during the Cold War. Free to see from outside; the outdoor information boards tell the full story well. Skip the museum inside, which is overpriced and touristy. Allow 20-30 mins.",
+          "tags": [
+            "Free from outside"
+          ],
+          "map": "https://maps.google.com/?q=Checkpoint+Charlie+Berlin",
+          "note": "U6 → Kochstraße, 2 min walk",
+          "alert": ""
+        },
+        {
+          "time": "16:00",
+          "name": "Topography of Terror",
+          "location": "",
+          "desc": "Free outdoor and indoor exhibition built on the exact site of the SS and Gestapo headquarters. Covers the rise of the Nazi terror apparatus and its crimes in unflinching detail. The outdoor section runs alongside a surviving stretch of the Berlin Wall. Allow 45-60 mins.",
+          "tags": [
+            "Free"
+          ],
+          "map": "https://maps.google.com/?q=Topography+of+Terror+Berlin",
+          "note": "10 min walk west from Checkpoint Charlie",
+          "alert": ""
+        },
+        {
+          "time": "17:00",
+          "name": "KERB Berlin - dinner",
+          "location": "Potsdamer Str. 2",
+          "desc": "Lively modern food hall right at Potsdamer Platz. 12 kitchens under one roof covering burgers, Korean, pasta, Moroccan and more. Walk in and order from whichever kitchen takes your fancy. Open until 10:30pm on Fridays. Keep it to about 45 mins to leave for the airport at 18:00.",
+          "tags": [
+            "Walk-in"
+          ],
+          "map": "https://maps.google.com/?q=KERB+Berlin+Potsdamer+Str+2",
+          "note": "10 min walk from Topography of Terror",
+          "alert": ""
+        },
+        {
+          "time": "18:00",
+          "name": "Head to BER - flight departs 21:45",
+          "location": "BER Airport",
+          "desc": "Aim to be at BER by 18:45, 3 hours before your international departure. Leaving at 18:00 gives a comfortable buffer for the 30 min journey.",
+          "tags": [
+            "WelcomeCard covers this"
+          ],
+          "map": "https://maps.google.com/?q=Berlin+Brandenburg+Airport+BER",
+          "note": "FEX or S9 from Potsdamer Platz / Hauptbahnhof → BER (~30 mins). WelcomeCard ABC covers this.",
+          "alert": "Check-in typically closes 60-75 mins before departure."
+        }
+      ]
+    }
+  ],
+  "tips": [
+    {
+      "title": "Walk-ins, no booking needed",
+      "text": "Café Nénom (Wed breakfast, opens 8am)\nDie Creme (Thu breakfast, opens 7:30am)\nMilch&Zucker (Fri breakfast, opens 7:30am)\nKERB Berlin (Fri dinner, open until 10:30pm)"
+    },
+    {
+      "title": "WelcomeCard discounts",
+      "text": "German Spy Museum: €13-18.50, ~25% off\nDDR Museum: ~€13, discount applies\nikono Berlin: ~€18-22, check app\nAll transport (72h): ~€30-38 pay-as-you-go, included in card"
+    },
+    {
+      "title": "Departure",
+      "text": "Flight departs 21:45 Friday. WelcomeCard ABC 72h covers the airport run."
+    }
+  ],
+  "checklist": [
+    {
+      "text": "Berlin WelcomeCard ABC 72h",
+      "note": "Do now - berlin-welcomecard.de. Set start time to match arrival. Must be ABC zone to cover the airport.",
+      "done": false
+    },
+    {
+      "text": "Reichstag dome",
+      "note": "Do now - bundestag.de. Free but books out weeks ahead.",
+      "done": false
+    },
+    {
+      "text": "German Spy Museum - timed entry",
+      "note": "Do now - deutsches-spionagemuseum.de. Dynamic pricing, earlier booking is cheaper.",
+      "done": false
+    },
+    {
+      "text": "ikono Berlin - timed entry",
+      "note": "Book soon - ikono.global. Check WelcomeCard discount in the app first.",
+      "done": false
+    },
+    {
+      "text": "Amrit Indian - Thursday dinner",
+      "note": "Book soon - very popular, especially on weekends.",
+      "done": false
+    }
+  ],
+  "costs": []
+}
