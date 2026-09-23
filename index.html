@@ -1227,7 +1227,7 @@ details.stop-ed .body { padding: 10px; }
                 <button class="btn" id="btnMd">Export Markdown</button>
                 <button class="btn" id="btnPrint">Print</button>
                 <div class="spacer"></div>
-                <button class="btn btn-ghost btn-danger" id="btnReset">New trip</button>
+                <button class="btn btn-danger" id="btnReset">New trip</button>
             </div>
             <input type="file" id="fileIn" accept=".json,application/json" hidden>
             <div class="note" style="margin-top:10px">Ctrl+S saves, Ctrl+O loads, or drop a saved .json anywhere on the page. Work is kept in this browser until you start a new trip.</div>
@@ -1325,7 +1325,7 @@ details.stop-ed .body { padding: 10px; }
 "use strict";
 
 /* ---------- app identity ---------- */
-const APP = { id: "way-point", version: "1.4.4", schema: 1 };
+const APP = { id: "way-point", version: "1.4.5", schema: 1 };
 
 /* ---------- dom helpers ---------- */
 const $  = s => document.querySelector(s);
@@ -2101,9 +2101,9 @@ function removeAt(list, i, what) {
 }
 function controls(list, i, what) {
     const c = el("div", "ctl");
-    c.append(btn("Up", () => move(list, i, -1), "", "Move " + what + " up"),
-             btn("Down", () => move(list, i, 1), "", "Move " + what + " down"),
-             btn("Remove", () => removeAt(list, i, what), "btn-ghost btn-danger", "Remove " + what));
+    c.append(btn("up", () => move(list, i, -1), "", "Move " + what + " up"),
+             btn("down", () => move(list, i, 1), "", "Move " + what + " down"),
+             btn("remove", () => removeAt(list, i, what), "btn-danger", "Remove " + what));
     return c;
 }
 
